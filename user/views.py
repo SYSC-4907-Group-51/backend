@@ -9,10 +9,9 @@ from .utils import get_tokens_for_user, logout_user
 class UserRegisterView(APIView):
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=201)
 
 class UserLoginView(APIView):
     def post(self, request):
@@ -69,10 +68,9 @@ class UserStatusView(APIView):
 class UserUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def put(self, request):
-        user = request.user
         serializer = UserUpdateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.update(user, request.data)
+        serializer.update(request.user, request.data)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class UserDeleteView(APIView):
@@ -80,5 +78,5 @@ class UserDeleteView(APIView):
     def delete(self, request):
         serializer = UserDeleteSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.delete()
+        serializer.delete(request.user, request.data)
         return Response(status=status.HTTP_204_NO_CONTENT)
