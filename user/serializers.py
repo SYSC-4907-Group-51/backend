@@ -51,10 +51,6 @@ class LogSerializer(serializers.ModelSerializer):
         model = Log
         fields = ['id', 'user', 'action', 'created_at']
         extra_kwargs = {
-            'user': {'read_only': True}
+            'user': {'read_only': True},
+            'action': {'read_only': True}
         }
-    
-    def create(self, validated_data):
-        log = Log(**validated_data)
-        log.save()
-        return log

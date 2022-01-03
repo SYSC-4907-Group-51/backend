@@ -44,9 +44,14 @@ class UserLoginView(APIView):
             else:
                 action = 'User {} failed to log in'.format(username)
                 # get User from username
-                user = User.objects.get(username=username)
-                Logger(user=user, action=action).warn()
-                return Response({'details': 'Invalid username/password'}, status=400)
+                try:
+                    user = User.objects.get(username=username)
+                except:
+                    pass
+                else:
+                    Logger(user=user, action=action).warn()
+                finally:
+                    return Response({'details': 'Invalid username/password'}, status=400)
         except User.DoesNotExist:
             return Response(status=403)
 
