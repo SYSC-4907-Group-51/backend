@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from user.models import User
+from user.models import User, Log
 from .utils import password_validator
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -44,3 +44,17 @@ class UserDeleteSerializer(serializers.Serializer):
             raise serializers.ValidationError({'detail': 'Password does not match'})
         instance.delete()
         return instance
+
+class LogSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Log
+        fields = ['id', 'user', 'action', 'created_at']
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
+    
+    def create(self, validated_data):
+        log = Log(**validated_data)
+        log.save()
+        return log

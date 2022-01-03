@@ -13,3 +13,12 @@ class User(AbstractUser):
 
     class Meta:
         ordering = ['last_name']
+
+class Log(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.TextField()
+    level = models.CharField(max_length=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']

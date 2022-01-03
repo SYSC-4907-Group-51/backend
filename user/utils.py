@@ -1,6 +1,7 @@
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import password_validation
 from django.core import exceptions
+from user.models import Log
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -27,3 +28,24 @@ def password_validator(instance, password):
     else:
         instance.set_password(password)
     return errors
+
+class Logger:
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    ERROR = 'ERROR'
+
+    def __init__(self, user, action):
+        self.user = user
+        self.action = action
+
+    def warn(self):
+        log = Log(user=self.user, action=self.action, level=self.WARNING)
+        log.save()
+
+    def info(self):
+        log = Log(user=self.user, action=self.action, level=self.INFO)
+        log.save()
+
+    def error(self):
+        log = Log(user=self.user, action=self.action, level=self.ERROR)
+        log.save()

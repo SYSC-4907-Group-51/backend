@@ -11,7 +11,6 @@ urlpatterns = [
     path('status', views.UserStatusView.as_view()),
     path('update', views.UserUpdateView.as_view()),
     path('delete', views.UserDeleteView.as_view()),
+    path('logs', views.LogView.as_view()),
     path('token-refresh', jwt_views.TokenRefreshView.as_view()),
 ]
-
-urlpatterns = format_suffix_patterns(urlpatterns)
