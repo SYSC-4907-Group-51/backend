@@ -60,8 +60,8 @@ class UserLoginView(APIView):
 class UserLogoutView(APIView):
     def post(self, request):
         request_user = request.user
+        status = logout_user(request.user)
         logout(request)
-        status = logout_user(request.data.get('refresh'))
         if status:
             action = 'User {} logged out successfully'.format(request_user.username)
             Logger(user=request_user, action=action).info()

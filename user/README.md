@@ -82,11 +82,7 @@ Access token from the `/login` response
 `Authorization: Bearer ey...` 
 
 ### Body
-```json
-{
-    "refresh": "ey..." // Requeired: refresh token from the login response
-}
-```
+`N/A`
 
 ### Response
 Not finalized

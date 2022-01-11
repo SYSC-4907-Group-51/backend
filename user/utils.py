@@ -4,14 +4,15 @@ from django.core import exceptions
 from user.models import Log
 
 def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
+    token = RefreshToken.for_user(user)
 
     return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
+        'refresh': str(token),
+        'access': str(token.access_token),
     }
 
-def logout_user(user_token):
+def logout_user(user):
+    user_token = get_tokens_for_user(user)['refresh']
     try:
         token = RefreshToken(user_token)
         token.blacklist()
