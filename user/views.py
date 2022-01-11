@@ -58,15 +58,16 @@ class UserLoginView(APIView):
 class UserLogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def post(self, request):
+        request_user = request.user
         logout(request)
         status = logout_user(request.data.get('refresh'))
         if status:
-            action = 'User {} logged out successfully'.format(request.user.username)
-            Logger(user=request.user, action=action).info()
+            action = 'User {} logged out successfully'.format(request_user.username)
+            Logger(user=request_user, action=action).info()
             return Response({'detail': 'Successfully Logged out'}, status=200)
         else:
-            action = 'User {} failed to log out'.format(request.user.username)
-            Logger(user=request.user, action=action).warn()
+            action = 'User {} failed to log out'.format(request_user.username)
+            Logger(user=request_user, action=action).warn()
             return Response({'detail': 'Invalid refresh token'}, status=400)
 
 class UserStatusView(APIView):
