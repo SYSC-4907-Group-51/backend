@@ -1,7 +1,5 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from visualize import permissions
-from visualize import serializers
 from visualize.serializers import KeyShowSerializer, KeyDeleteSerializer
 from user.utils import Logger
 from rest_framework import permissions, status
@@ -11,7 +9,6 @@ from user.models import User
 
 # Create your views here.
 class KeyCreateView(APIView):
-    permissions_classes = [permissions.IsAuthenticated]
     def post(self, request):
         key = create_key(request.user, request.data.get('notes'))
         if key == -1:
@@ -29,14 +26,12 @@ class KeyCreateView(APIView):
         }, status=201)
 
 class KeyShowView(APIView):
-    permissions_classes = [permissions.IsAuthenticated]
     def get(self, request):
         key = Key.objects.filter(user=request.user)
         serializer = KeyShowSerializer(key, many=True)
         return Response(serializer.data)
 
 class KeyDeleteView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     def delete(self, request):
         serializer = KeyDeleteSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -48,7 +43,7 @@ class KeyDeleteView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class VisualizeView(APIView):
-
+    permission_classes = [permissions.AllowAny]
     def get(self, request):
         if request.query_params.get('username') and request.query_params.get('key'):
             try:

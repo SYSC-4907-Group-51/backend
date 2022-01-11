@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from .utils import get_tokens_for_user, logout_user, Logger
 
 class UserRegisterView(APIView):
+    permission_classes = [permissions.AllowAny]
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -18,6 +19,7 @@ class UserRegisterView(APIView):
         return Response(serializer.data, status=201)
 
 class UserLoginView(APIView):
+    permission_classes = [permissions.AllowAny]
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -56,7 +58,6 @@ class UserLoginView(APIView):
             return Response(status=403)
 
 class UserLogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     def post(self, request):
         request_user = request.user
         logout(request)
@@ -71,7 +72,6 @@ class UserLogoutView(APIView):
             return Response({'detail': 'Invalid refresh token'}, status=400)
 
 class UserStatusView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         return Response(
             {
@@ -86,7 +86,6 @@ class UserStatusView(APIView):
         )
 
 class UserUpdateView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     def put(self, request):
         serializer = UserUpdateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -98,7 +97,6 @@ class UserUpdateView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class UserDeleteView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     def delete(self, request):
         serializer = UserDeleteSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -112,7 +110,6 @@ class UserDeleteView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class LogView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         logs = Log.objects.filter(user=request.user).order_by('-created_at')
         serializer = LogSerializer(logs, many=True)
