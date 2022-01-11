@@ -9,3 +9,5 @@ Username: admin
 Password: admin
 Email: admin@example.com
 ```
+
+API URL: `https://cap.gura.ch/api/`
