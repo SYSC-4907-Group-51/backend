@@ -7,6 +7,7 @@ name = "pypi"
 djangorestframework = "*"
 django = "*"
 djangorestframework-simplejwt = "*"
+requests-oauthlib = "*"
 
 [dev-packages]
 

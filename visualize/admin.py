@@ -1,5 +1,4 @@
 from django.contrib import admin
-from rest_framework.fields import ReadOnlyField
 from .models import Key
 from .utils import generate_key
 
