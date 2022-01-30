@@ -34,3 +34,6 @@ class FitbitWrapper:
     
     def get_user_profile(self) -> dict:
         return self.fitbit_obj.user_profile_get()
+
+    def get_devices(self) -> dict:
+        return self.fitbit_obj.get_devices()

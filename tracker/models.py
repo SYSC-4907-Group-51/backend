@@ -16,3 +16,27 @@ class UserProfile(models.Model):
 
     class Meta:
         ordering = ['user', '-created_at']
+
+    def save_authorization_state_id(self, state_id):
+        self.state_id = state_id
+        self.save()
+
+class UserDevice(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    devices = models.JSONField(default=dict)
+    last_sync_time = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    REQUIRED_FIELDS = ['user', 'last_sync_time']
+
+    class Meta:
+        ordering = ['user', '-created_at']
+
+    def update_last_sync_time(self, last_sync_time):
+        self.last_sync_time = last_sync_time
+        self.save()
+    
+    def update_devices(self, devices):
+        self.devices = devices
+        self.save()
