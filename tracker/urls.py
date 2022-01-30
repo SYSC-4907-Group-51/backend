@@ -8,5 +8,6 @@ router = DefaultRouter()
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
     path('auth', views.TrackerAuthorizeView.as_view()),
+    path('refresh', views.TrackerRefreshView.as_view()),
     path('', include(router.urls)),
 ]

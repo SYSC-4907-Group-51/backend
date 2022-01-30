@@ -5,6 +5,8 @@ from user.models import User
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     user_profile = models.JSONField(default=dict)
+    user_account_id = models.CharField(max_length=100, default='')
+    scope = models.JSONField(default=dict)
     state_id = models.CharField(max_length=30)
     access_token = models.TextField()
     refresh_token = models.TextField()

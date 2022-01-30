@@ -4,8 +4,10 @@ from rest_framework.views import APIView
 from user.utils import Logger
 from rest_framework import permissions, status
 from tracker.utils import *
-from tracker.wrapper.fitbit_wrapper import FitbitWrapper
-from tracker.lib.thread import run_tasks
+from tracker.wrapper.fitbit_wrapper import *
+from tracker.lib.thread import run_task
+from django.utils.timezone import get_current_timezone
+from datetime import datetime
 
 # Create your views here.
 class TrackerAuthorizeView(APIView):
@@ -64,22 +66,45 @@ class TrackerAuthorizeView(APIView):
 
             action = 'User {} authorized Fitbit account'.format(query_dict['user'].username)
             Logger(user=query_dict['user'], action=action).info()
-
-            run_tasks(
-                [
-                    dict(
-                        target=save_user_profile,
-                        args=(self.fitbit_obj, token_dict, query_dict['user']),
-                        daemon=True,
-                    ),
-                    dict(
-                        target=save_user_devices,
-                        args=(self.fitbit_obj, query_dict['user']),
-                        daemon=True,
-                    ),
-                ]
+            access_token = token_dict['access_token']
+            refresh_token = token_dict['refresh_token']
+            expires_at = datetime.fromtimestamp(token_dict['expires_at'], tz=get_current_timezone())
+            scope = token_dict['scope']
+            user_account_id = token_dict['user_id']
+            UserProfile.objects.filter(
+                user=query_dict['user']
+            ).update(
+                access_token=access_token, 
+                refresh_token=refresh_token, 
+                expires_at=expires_at, 
+                scope=scope,
+                user_account_id=user_account_id
             )
+            run_task(
+                dict(
+                    target=FitbitRetriever(query_dict['user']).retrieve_all,
+                    args=(),
+                    daemon=True,
+                ),
+            )
+            # TODO: use header redirect here
             return Response(
                 {'details': 'Successfully authorized'},
                 status=200,
             )
+
+class TrackerRefreshView(APIView):
+    def put(self, request):
+        action = 'User {} initialized a refresh request'.format(request.user.username)
+        Logger(user=request.user, action=action).info()
+        run_task(
+            dict(
+                target=FitbitRetriever(request.user).retrieve_all,
+                args=(),
+                daemon=True,
+            ),
+        )
+        return Response(
+            {'details': 'Successed'},
+            status=200,
+        )
