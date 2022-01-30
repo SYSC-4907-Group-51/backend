@@ -3,7 +3,7 @@ from user.models import User
 
 # Create your models here.
 class UserProfile(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     user_profile = models.JSONField(default=dict)
     state_id = models.CharField(max_length=30)
     access_token = models.TextField()

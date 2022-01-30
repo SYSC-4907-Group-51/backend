@@ -17,7 +17,19 @@ class TrackerAuthorizeView(APIView):
 
     def post(self, request):
         if not request.user.is_authenticated:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "detail": "Given token not valid for any token type",
+                "code": "token_not_valid",
+                "messages": [
+                    {
+                    "token_class": "AccessToken",
+                    "token_type": "access",
+                    "message": "Token is invalid or expired"
+                    }
+                ]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
         url, state_id = self.fitbit_obj.get_authorization_url()
         save_authorization_state_id(state_id, request.user)
         return Response(
@@ -31,7 +43,19 @@ class TrackerAuthorizeView(APIView):
         try:
             token_dict = self.fitbit_obj.get_token_dict(code)
         except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "detail": "Given token not valid for any token type",
+                "code": "token_not_valid",
+                "messages": [
+                    {
+                    "token_class": "AccessToken",
+                    "token_type": "access",
+                    "message": "Token is invalid or expired"
+                    }
+                ]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
         else:
             access_token = token_dict['access_token']
             refresh_token = token_dict['refresh_token']

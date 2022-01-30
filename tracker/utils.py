@@ -2,8 +2,17 @@ from tracker.models import UserProfile
 from django.core import exceptions
 
 def save_authorization_state_id(state_id, user):
-    obj, created = UserProfile.objects.update_or_create(user=user, state_id=state_id)
-    return created
+    try:
+        user_profile = UserProfile.objects.get(user=user)
+    except exceptions.ObjectDoesNotExist:
+        user_profile = UserProfile.objects.create(
+            user=user,
+            state_id=state_id
+        )
+    else:
+        user_profile.state_id = state_id
+        user_profile.save()
+    return user_profile
 
 def get_user_with_state_id(state_id):
     return_dict = dict()
