@@ -55,7 +55,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('username','email', 'password', 'password_confirm', 'first_name', 'last_name','is_superuser', 'is_active',),
         }),
     )
-    readonly_fields = ('created_at', 'updated_at',)
+    readonly_fields = ('is_superuser','created_at', 'updated_at',)
     search_fields = ('username', 'email', 'first_name', 'last_name','is_superuser', 'is_active')
     ordering = ('last_name','first_name',)
     filter_horizontal = ()
@@ -64,7 +64,7 @@ admin.site.register(User, UserAdmin)
 
 class LogAdmin(admin.ModelAdmin):
     list_display = ('user', 'action','level','created_at', )
-    list_filter = ('action',)
+    list_filter = ('user','level',)
     fieldsets = (
         (None, {'fields': ('user', 'action', 'level', 'created_at',)}),
     )
@@ -72,5 +72,8 @@ class LogAdmin(admin.ModelAdmin):
     search_fields = ('user', 'action','level',)
     ordering = ('-created_at',)
     filter_horizontal = ()
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 admin.site.register(Log, LogAdmin)

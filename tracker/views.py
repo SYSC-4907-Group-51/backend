@@ -8,6 +8,7 @@ from tracker.wrapper.fitbit_wrapper import *
 from tracker.lib.thread import run_task
 from django.utils.timezone import get_current_timezone
 from datetime import datetime
+from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 
 # Create your views here.
 class TrackerAuthorizeView(APIView):
@@ -43,20 +44,20 @@ class TrackerAuthorizeView(APIView):
     def get(self, request):
         state_id = request.query_params.get('state')
         code = request.query_params.get('code')
+        if not state_id or not code:
+            Response(
+                status=status.HTTP_400_BAD_REQUEST
+            )
         try:
             token_dict = self.fitbit_obj.get_token_dict(code)
-        except:
-            return Response({
-                "detail": "Given token not valid for any token type",
-                "code": "token_not_valid",
-                "messages": [
-                    {
-                    "token_class": "AccessToken",
-                    "token_type": "access",
-                    "message": "Token is invalid or expired"
-                    }
-                ]
-                },
+        except Warning as e:
+            return Response(
+                headers={'Location': '/mismatcherror'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except InvalidGrantError as e:
+            return Response(
+                headers={"Location": "/invaliderror"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:
@@ -78,7 +79,8 @@ class TrackerAuthorizeView(APIView):
                 refresh_token=refresh_token, 
                 expires_at=expires_at, 
                 scope=scope,
-                user_account_id=user_account_id
+                user_account_id=user_account_id,
+                is_authorized=True
             )
             run_task(
                 dict(
@@ -104,6 +106,16 @@ class TrackerRefreshView(APIView):
                 daemon=True,
             ),
         )
+        return Response(
+            {'details': 'Successed'},
+            status=200,
+        )
+
+class TrackerDeleteView(APIView):
+    def delete(self, request):
+        action = 'User {} deleted the authorization for Fitbit'.format(request.user.username)
+        Logger(user=request.user, action=action).info()
+        UserProfile.objects.get(user=request.user).delete()
         return Response(
             {'details': 'Successed'},
             status=200,

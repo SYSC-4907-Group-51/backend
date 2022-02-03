@@ -9,5 +9,6 @@ router = DefaultRouter()
 urlpatterns = [
     path('auth', views.TrackerAuthorizeView.as_view()),
     path('refresh', views.TrackerRefreshView.as_view()),
+    path('delete', views.TrackerDeleteView.as_view()),
     path('', include(router.urls)),
 ]
