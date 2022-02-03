@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate, login, logout
 from .utils import get_tokens_for_user, logout_user, Logger
+from tracker.models import *
 
 class UserRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -73,16 +74,54 @@ class UserLogoutView(APIView):
 
 class UserStatusView(APIView):
     def get(self, request):
+        try:
+            user_profile = UserProfile.objects.get(user=request.user)
+        except:
+            is_authorized = False
+        else:
+            is_authorized = user_profile.is_authorized
+
+        try:
+            user_device = UserDevice.objects.get(user_profile=user_profile)
+        except:
+            devices = []
+            last_sync_time = 0
+        else:
+            devices = user_device.devices
+            last_sync_time = user_device.last_sync_time
+
         return Response(
             {
                 'id': request.user.id,
                 'username': request.user.username,
                 'first_name': request.user.first_name,
                 'last_name': request.user.last_name,
-                'email': request.user.email,
-                'created_at': request.user.created_at,
-                'updated_at': request.user.updated_at
+                'is_authorized': is_authorized,
+                'devices': devices,
+                'last_sync_time': last_sync_time
             }
+        )
+
+class UserSyncStatusView(APIView):
+    def get(self, request):
+        try:
+            user_profile = UserProfile.objects.get(user=request.user)
+        except:
+            pass
+
+        try:
+            user_sync_status_entries = UserSyncStatus.objects.filter(user_profile=user_profile)
+        except:
+            sync_status = []
+        else:
+            sync_status = []
+            for item in user_sync_status_entries:
+                sync_status.append({
+                    'date_time': item.date_time_uuid,
+                    'status': item.get_sync_status()
+                })
+        return Response(
+            sync_status
         )
 
 class UserUpdateView(APIView):

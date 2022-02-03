@@ -115,16 +115,93 @@ Successful Status Code: `200 OK`
 
 ```json
 {
-  "id": 4, // user id
-  "username": "test", // username
-  "first_name": "test", // first name
-  "last_name": "test", // last name
-  "email": "test@exmaple.com", // email
-  "created_at": "2022-01-10T20:06:52.631583-05:00", // the time the user registered
-  "updated_at": "2022-01-10T20:06:52.716159-05:00", // the time the user updated their profile
-  "refresh": "ey...", // refresh token for a new access token
-  "access": "ey..." // access token to be put in the header for subsequence acess and user identification
+  "id": 2,
+  "username": "test",
+  "first_name": "test",
+  "last_name": "test",
+  "is_authorized": true,
+  "devices": [
+    {
+      "battery": "High",
+      "batteryLevel": 84,
+      "deviceVersion": "Inspire 2",
+      "features": [],
+      "id": "1947549326",
+      "lastSyncTime": "2022-02-03T11:45:47.000",
+      "mac": "FFF541F8A4C8",
+      "type": "TRACKER"
+    },
+    ...
+  ],
+  "last_sync_time": "2022-02-03T16:45:47Z",
+  "sync_status": [
+    {
+      "date_time": "2021-10-09",
+      "status": [
+        true, // step_time_series
+        true, // heartrate_time_series
+        false, // sleep_time_series
+        false, // step_intraday_data
+        false // heartrate_intraday_data
+      ]
+    },
+    {
+      "date_time": "2021-10-10",
+      "status": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    },
+    ...
+  ]
 }
+```
+
+## /sync-status
+
+### Method
+`GET`
+
+### Header
+Access token from the `/login` response
+
+`Authorization: Bearer ey...` 
+
+### Body
+`N/A`
+
+### Response
+Not finalized
+
+Successful Status Code: `200 OK`
+
+```json
+[
+  {
+    "date_time": "2021-10-09",
+    "status": [
+      true, // step_time_series
+      true, // heartrate_time_series
+      false, // sleep_time_series
+      false, // step_intraday_data
+      false // heartrate_intraday_data
+    ]
+  },
+  {
+    "date_time": "2021-10-10",
+    "status": [
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  ...
+]
 ```
 
 ## /update

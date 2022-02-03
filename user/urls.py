@@ -8,6 +8,7 @@ urlpatterns = [
     path('register', views.UserRegisterView.as_view()),
     path('logout', views.UserLogoutView.as_view()),
     path('status', views.UserStatusView.as_view()),
+    path('sync-status', views.UserSyncStatusView.as_view()),
     path('update', views.UserUpdateView.as_view()),
     path('delete', views.UserDeleteView.as_view()),
     path('logs', views.LogView.as_view()),
