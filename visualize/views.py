@@ -1,10 +1,11 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from visualize.serializers import KeyShowSerializer, KeyDeleteSerializer
+from visualize.serializers import KeyDeleteSerializer
 from user.utils import Logger
 from rest_framework import permissions, status
-from visualize.utils import create_key, RE_GENERATE_KEY_LIMIT, delete_key
-from visualize.models import Key
+from visualize.utils import create_key, RE_GENERATE_KEY_LIMIT, delete_key, generate_authorization_key
+from visualize.models import *
+from visualize.permissions import *
 from user.models import User
 from tracker.models import *
 
@@ -31,9 +32,8 @@ class KeyCreateView(APIView):
                 'error': 'user profile does not exist'
             }, status=400)
         else:
-            try:
-                UserSyncStatus.objects.get(user_profile=user_profile)
-            except UserSyncStatus.DoesNotExist:
+            user_sync_status_objs = UserSyncStatus.objects.filter(user_profile=user_profile)
+            if user_sync_status_objs.count() == 0:
                 return Response({
                     'error': 'user sync status does not exist'
                 }, status=400)
@@ -55,7 +55,7 @@ class KeyCreateView(APIView):
 
 class KeyShowView(APIView):
     def get(self, request):
-        key_objs = Key.objects.filter(user=request.user)
+        key_objs = Key.objects.filter(user=request.user, is_available=True)
         keys = []
         for key in key_objs:
             keys.append({
@@ -77,7 +77,7 @@ class KeyDeleteView(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class VisualizeView(APIView):
+class VisualizeEntranceView(APIView):
     permission_classes = [permissions.AllowAny]
     def get(self, request):
         if request.query_params.get('username') and request.query_params.get('key'):
@@ -87,11 +87,10 @@ class VisualizeView(APIView):
                 return Response({'details': 'Invalid request'}, status=400)
             else:
                 try:
-                    key = Key.objects.get(user=user, key=request.query_params.get('key'))
+                    key = Key.objects.get(user=user, key=request.query_params.get('key'), is_available=True)
                 except:
                     return Response({'details': 'Invalid request'}, status=400)
                 else:
-                    # TODO: data visualization
                     delete_key(key)
                     key_permissions_ = key.get_permissions()
                     action = 'User {} data is visualized using key {} for {} with notes: {}'.format(user.username, key.key, ", ".join([KEY_PERMISSIONS[i] for i in range(len(key_permissions_)) if key_permissions_[i] is True]), key.notes)
@@ -121,11 +120,33 @@ class VisualizeView(APIView):
                         if key_permissions_[4] is True and user_sync_status_obj.get_heartrate_intraday_data_status() is True:
                             available_dates['heartrate_intraday_data'].append(user_sync_status_obj.date_time_uuid)
 
+                    authorization_key = generate_authorization_key()
+
+                    AuthorizationKey.objects.create(key=key, authorization_key=authorization_key)
+
                     return Response({
-                        'key': key.key,
+                        'authorization_key': authorization_key,
                         'username': user.username,
                         'permissions': key_permissions_,
                         'available_dates': available_dates,
                     })
         else:
             return Response({'details': 'Invalid request'}, status=400)
+
+class VisualizeIntradayView(APIView):
+    permission_classes = [VisualizePermission]
+    def get(self, request):
+        if request.query_params.get('type') and request.query_params.get('date'):
+            return Response({'details': 'palceholder'}, status=200)
+        return Response({'error': 'Invalid type or date'}, status=400)
+
+class VisualizeTimeSeriesView(APIView):
+    permission_classes = [VisualizePermission]
+    def get(self, request):
+        if request.query_params.get('type') and request.query_params.get('start_date'):
+            if request.query_params.get('end_date'):
+                # with end date
+                return Response({'details': 'palceholder'}, status=200)
+            # till today
+            return Response({'details': 'palceholder'}, status=200)
+        return Response({'error': 'Invalid type or start_date or end_date'}, status=400)

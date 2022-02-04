@@ -1,5 +1,7 @@
 import random
+import secrets
 from visualize.models import Key
+from datetime import datetime, timedelta
 
 KEY_LENGTH = 6
 RE_GENERATE_KEY_LIMIT = 10
@@ -7,6 +9,14 @@ RE_GENERATE_KEY_LIMIT = 10
 def generate_key():
     key = random.randint(10 ** (KEY_LENGTH - 1), 10 ** (KEY_LENGTH) - 1)
     return key
+
+def generate_authorization_key():
+    key = secrets.token_urlsafe(64)
+    return key
+
+def generate_expired_at():
+    expired_at = datetime.now() + timedelta(hours=1)
+    return expired_at
 
 def create_key(user, notes=None, permissions=[False, False, False, False, False]):
     # check if user has reached the limit
@@ -32,5 +42,6 @@ def create_key(user, notes=None, permissions=[False, False, False, False, False]
     return key
 
 def delete_key(key):
-    key.delete()
+    # TODO: run task to delete key 
+    key.set_unavailable()
     return True
