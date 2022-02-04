@@ -8,7 +8,7 @@ def generate_key():
     key = random.randint(10 ** (KEY_LENGTH - 1), 10 ** (KEY_LENGTH) - 1)
     return key
 
-def create_key(user, notes=None):
+def create_key(user, notes=None, permissions=[False, False, False, False, False]):
     # check if user has reached the limit
     if Key.objects.filter(user=user).count() >= RE_GENERATE_KEY_LIMIT:
         return -1
@@ -23,7 +23,12 @@ def create_key(user, notes=None):
             break
     if is_re_generate_failed:
         return -1
-    key = Key.objects.create(key=key_gen, user=user, notes=notes)
+    allow_step_time_series = permissions[0]
+    allow_heartrate_time_series = permissions[1]
+    allow_sleep_time_series = permissions[2]
+    allow_step_intraday_data = permissions[3]
+    allow_heartrate_intraday_data = permissions[4]
+    key = Key.objects.create(key=key_gen, user=user, notes=notes, allow_step_time_series=allow_step_time_series, allow_heartrate_time_series=allow_heartrate_time_series, allow_sleep_time_series=allow_sleep_time_series, allow_step_intraday_data=allow_step_intraday_data, allow_heartrate_intraday_data=allow_heartrate_intraday_data)
     return key
 
 def delete_key(key):

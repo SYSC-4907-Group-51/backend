@@ -220,3 +220,28 @@ class UserSyncStatus(models.Model):
         if self.heartrate_intraday_data is None:
             status[4] = False
         return status
+    
+    def get_step_time_series_status(self):
+        if self.step_time_series is None:
+            return False
+        return True
+
+    def get_heartrate_time_series_status(self):
+        if self.heartrate_time_series is None:
+            return False
+        return True
+
+    def get_sleep_time_series_status(self):
+        if self.sleep_time_series is None:
+            return False
+        return True 
+
+    def get_step_intraday_data_status(self):
+        if self.step_intraday_data is None:
+            return False
+        return True
+
+    def get_heartrate_intraday_data_status(self):
+        if self.heartrate_intraday_data is None:
+            return False
+        return True
