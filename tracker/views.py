@@ -8,6 +8,7 @@ from tracker.lib.thread import run_task
 from django.utils.timezone import get_current_timezone
 from datetime import datetime
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
+from visualize.models import *
 
 # Create your views here.
 class TrackerAuthorizeView(APIView):
@@ -98,9 +99,9 @@ class TrackerRefreshView(APIView):
     def put(self, request):
         date_time = None
         action = 'User {} initialized a refresh request'.format(request.user.username)
-        if request.data.get('date_time') is not None:
-            date_time = date.fromisoformat(request.data.get('date_time'))
-            action = 'User {} initialized a refresh request for {}'.format(request.user.username, request.data.get('date_time'))
+        if request.data.get('date') is not None:
+            date_time = date.fromisoformat(request.data.get('date'))
+            action = 'User {} initialized a refresh request for {}'.format(request.user.username, request.data.get('date'))
         
         Logger(user=request.user, action=action).info()
         run_task(
@@ -117,6 +118,12 @@ class TrackerRefreshView(APIView):
 
 class TrackerDeleteView(APIView):
     def delete(self, request):
+        user_created_keys = Key.objects.filter(user=request.user, is_available=True)
+        if user_created_keys.count() > 0:
+            return Response(
+                {'error': 'Keys are still in use, authorization cannot be deleted!'},
+                status=400,
+            )
         action = 'User {} deleted the authorization for Fitbit'.format(request.user.username)
         Logger(user=request.user, action=action).info()
         UserProfile.objects.get(user=request.user).delete()
