@@ -191,6 +191,10 @@ class UserHeartRateIntradayData(models.Model):
 
     class Meta:
         ordering = ['user_profile', 'time_series']
+    
+    def update_dataset(self, value):
+        self.dataset = value
+        self.save()
 
 class UserSyncStatus(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)

@@ -51,7 +51,17 @@ Access token from the `/login` response
 `Authorization: Bearer ey...` 
 
 ### Body
-`N/A`
+All: `N/A`
+
+or
+
+Specific day:
+
+```json
+{
+  "date": "<date in yyyy-mm-dd>"
+}
+```
 
 ### Response
 Not finalized

@@ -402,18 +402,21 @@ class FitbitRetriever:
         if len(time_intervals) == 0:
             # refresh start date to today, will always less than 30 days
             new_entries_from_fitbit = endpoint(**endpoint_args)
-            for item in new_entries_from_fitbit:
-                items.append(item)
+            items = self.__append_items(items, new_entries_from_fitbit)
         else:
             for i in range(0, len(time_intervals) - 1):
                 endpoint_args["start_date"] = time_intervals[i]
                 endpoint_args["end_date"] = time_intervals[i+1]
                 new_entries_from_fitbit = endpoint(**endpoint_args)
-                if type(new_entries_from_fitbit) is list:
-                    for item in new_entries_from_fitbit:
-                        items.append(item)
-                elif type(new_entries_from_fitbit) is dict:
-                    items.append(new_entries_from_fitbit)
+                items = self.__append_items(items, new_entries_from_fitbit)
+        return items
+
+    def __append_items(self, items: dict, data):
+        if type(data) is list:
+            for item in data:
+                items.append(item)
+        elif type(data) is dict:
+            items.append(data)
         return items
     
     def __calculate_time_intervals(self, start_date, end_date, duration):
