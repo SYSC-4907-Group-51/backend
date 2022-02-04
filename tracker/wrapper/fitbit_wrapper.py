@@ -105,7 +105,10 @@ class FitbitRetriever:
             start_date = date.fromtimestamp(start_date)
         if type(end_date) is str:
             end_date = date.fromtimestamp(end_date)
+        if self.user.is_retrieving:
+            return
         try:
+            self.user.update_retrieving_status(True)
             self.save_user_profile()
             if self.is_authorized:
                 self.save_user_devices()
@@ -117,9 +120,11 @@ class FitbitRetriever:
         except HTTPTooManyRequests as e:
             action = 'Fail to retrieve User {} data because {}, reset after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs)
             Logger(user=self.user, action=action).warn()
+            self.user.update_retrieving_status(False)
         #     #TODO: add to job queue
         finally:
             self.calculate_sync_status()
+            self.user.update_retrieving_status(False)
 
     def token_updater(self, token_dict):
         access_token = token_dict['access_token']

@@ -8,6 +8,8 @@ from visualize.models import *
 from visualize.permissions import *
 from user.models import User
 from tracker.models import *
+from tracker.lib.thread import run_task
+from tracker.wrapper.fitbit_wrapper import *
 
 # Create your views here.
 KEY_PERMISSIONS = [
@@ -46,7 +48,13 @@ class KeyCreateView(APIView):
         key_permissions_ = key.get_permissions()
         action = 'User {} created a key {} for {} with notes: {}'.format(request.user.username, key.key, ", ".join([KEY_PERMISSIONS[i] for i in range(len(key_permissions_)) if key_permissions_[i] is True]), request.data.get('notes'))
         Logger(user=request.user, action=action).info()
-
+        run_task(
+            dict(
+                target=FitbitRetriever(request.user).retrieve_all,
+                args=(),
+                daemon=True,
+            ),
+        )
         return Response({
             'key': key.key,
             'notes': key.notes, 

@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_authorized = models.BooleanField(default=False)
+    is_retrieving = models.BooleanField(default=False)
 
     REQUIRED_FIELDS = ['user', 'user_profile']
 
@@ -33,6 +34,10 @@ class UserProfile(models.Model):
     
     def update_user_profile(self, value):
         self.user_profile = value
+        self.save()
+    
+    def update_retrieving_status(self, value):
+        self.is_retrieving = value
         self.save()
 
 class UserDevice(models.Model):
