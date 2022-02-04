@@ -85,7 +85,7 @@ class UserSleepTimeSeriesAdmin(admin.ModelAdmin):
 admin.site.register(UserSleepTimeSeries, UserSleepTimeSeriesAdmin)
 
 class UserStepIntradayDataAdmin(admin.ModelAdmin):
-    list_display = ('user_profile', 'time_series', 'dataset', 'dataset_interval', 'dataset_type', 'last_sync_time',)
+    list_display = ('user_profile', 'time_series', 'dataset_interval', 'dataset_type', 'last_sync_time',)
     list_filter = ('user_profile',)
     fieldsets = (
         (None, {'fields': ('user_profile', 'dataset', 'dataset_interval', 'dataset_type',)}),
@@ -101,7 +101,7 @@ class UserStepIntradayDataAdmin(admin.ModelAdmin):
 admin.site.register(UserStepIntradayData, UserStepIntradayDataAdmin)
 
 class UserHeartRateIntradayDataAdmin(admin.ModelAdmin):
-    list_display = ('user_profile', 'time_series', 'dataset', 'dataset_interval', 'dataset_type', 'last_sync_time',)
+    list_display = ('user_profile', 'time_series', 'dataset_interval', 'dataset_type', 'last_sync_time',)
     list_filter = ('user_profile',)
     fieldsets = (
         (None, {'fields': ('user_profile', 'dataset', 'dataset_interval', 'dataset_type',)}),

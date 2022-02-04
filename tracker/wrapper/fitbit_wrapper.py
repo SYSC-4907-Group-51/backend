@@ -1,7 +1,7 @@
 from os import times_result
 from tracker.wrapper.fitbit import fitbit
+from tracker.wrapper.fitbit.fitbit.exceptions import *
 from tracker.models import *
-from django.core import exceptions
 from user.models import User
 from django.utils.timezone import get_current_timezone, make_aware
 from datetime import datetime, timedelta, date
@@ -89,7 +89,7 @@ class FitbitRetriever:
     def __get_db_profile(self):
         try:
             self.user_profile = UserProfile.objects.get(user=self.user)
-        except exceptions.ObjectDoesNotExist:
+        except UserProfile.DoesNotExist:
             pass
         else:
             self.user_profile_json = self.user_profile.user_profile
@@ -106,15 +106,15 @@ class FitbitRetriever:
         if type(end_date) is str:
             end_date = date.fromtimestamp(end_date)
         try:
-            # self.save_user_profile()
-            # if self.is_authorized:
-            #     self.save_user_devices()
-            #     self.save_step_time_series(start_date=start_date, end_date=end_date)
-            #     self.save_heartrate_time_series(start_date=start_date, end_date=end_date)
-            #     self.save_sleep_time_series(start_date=start_date, end_date=end_date)
+            self.save_user_profile()
+            if self.is_authorized:
+                self.save_user_devices()
+                self.save_step_time_series(start_date=start_date, end_date=end_date)
+                self.save_heartrate_time_series(start_date=start_date, end_date=end_date)
+                self.save_sleep_time_series(start_date=start_date, end_date=end_date)
                 self.save_step_intraday_data(start_date=start_date, end_date=end_date)
-                # self.save_heartrate_intraday_data(start_date=start_date, end_date=end_date)
-        except Exception as e:
+                self.save_heartrate_intraday_data(start_date=start_date, end_date=end_date)
+        except HTTPTooManyRequests as e:
             action = 'Fail to retrieve User {} data because {}, reset after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs)
             Logger(user=self.user, action=action).warn()
         #     #TODO: add to job queue
@@ -147,7 +147,7 @@ class FitbitRetriever:
             date_time = date.fromisoformat(time)
             try:
                 entry = UserSyncStatus.objects.get(user_profile=self.user_profile, date_time=date_time)
-            except exceptions.ObjectDoesNotExist:
+            except UserSyncStatus.DoesNotExist:
                 UserSyncStatus.objects.create(
                     user_profile=self.user_profile,
                     date_time_uuid=time,
@@ -173,7 +173,7 @@ class FitbitRetriever:
         entry = UserProfile.objects.get(user=self.user)
         try:
             self.user_profile_json = self.fitbit_obj.get_user_profile()['user']
-        except Exception as e:
+        except HTTPUnauthorized as e:
             action = 'Fail to retrieve User {} data due to {}.'.format(self.user.username, "invalid authorization")
             Logger(user=self.user, action=action).warn()
             entry.update_is_authorized(False)
@@ -196,7 +196,7 @@ class FitbitRetriever:
         user_devices_json = self.fitbit_obj.get_devices()
         try:
             user_devices = model.objects.get(user_profile=self.user_profile)
-        except exceptions.ObjectDoesNotExist:
+        except model.DoesNotExist:
             user_devices = model.objects.create(
                 user_profile=self.user_profile,
                 devices=user_devices_json,
@@ -221,7 +221,7 @@ class FitbitRetriever:
             try:
                 last_entry = model.objects.get(date_time_uuid=item['dateTime'])
                 last_entry.update_steps(item["value"])
-            except exceptions.ObjectDoesNotExist:
+            except model.DoesNotExist:
                 model.objects.create(
                     user_profile=self.user_profile,
                     date_time_uuid=item['dateTime'],
@@ -248,7 +248,7 @@ class FitbitRetriever:
                 last_entry = model.objects.get(date_time_uuid=item['dateTime'])
                 last_entry.update_resting_heartrate(item["value"]["restingHeartRate"])
                 last_entry.update_heartrate_zones(item["value"]["heartRateZones"])
-            except exceptions.ObjectDoesNotExist:
+            except model.DoesNotExist:
                 model.objects.update_or_create(
                     user_profile=self.user_profile,
                     date_time_uuid=item['dateTime'],
@@ -287,7 +287,7 @@ class FitbitRetriever:
                 last_entry.update_time_in_bed(item["timeInBed"])
                 last_entry.update_levels(item["levels"]["data"])
                 last_entry.update_summary(item["levels"]["summary"])
-            except exceptions.ObjectDoesNotExist:
+            except model.DoesNotExist:
                 model.objects.update_or_create(
                     user_profile=self.user_profile,
                     date_time_uuid=item['dateOfSleep'],
@@ -318,7 +318,7 @@ class FitbitRetriever:
             end_date=end_date
         )
         for item in user_step_intraday_data_from_fitbit:
-            activities_steps = item["activities-steps"]
+            activities_steps = item["activities-steps"][0]
             activities_steps_intraday = item["activities-steps-intraday"]
             date_time = date.fromisoformat(activities_steps['dateTime'])
             correspoding_time_series = UserStepTimeSeries.objects.get(
@@ -331,7 +331,7 @@ class FitbitRetriever:
                     time_series=correspoding_time_series
                 )
                 last_entry.update_dataset(activities_steps_intraday["dataset"])
-            except exceptions.ObjectDoesNotExist:
+            except model.DoesNotExist:
                 model.objects.create(
                     user_profile=self.user_profile,
                     time_series=correspoding_time_series,
@@ -353,10 +353,10 @@ class FitbitRetriever:
             end_date=end_date
         )
         for item in user_heartrate_intraday_data_from_fitbit:
-            activities_heart = item["activities-heart"]
+            activities_heart = item["activities-heart"][0]
             activities_heart_intraday = item["activities-heart-intraday"]
             date_time = date.fromisoformat(activities_heart['dateTime'])
-            correspoding_time_series = UserHeartRateIntradayData.objects.get(
+            correspoding_time_series = UserHeartRateTimeSeries.objects.get(
                 user_profile=self.user_profile,
                 date_time=date_time
             )
@@ -366,7 +366,7 @@ class FitbitRetriever:
                     time_series=correspoding_time_series
                 )
                 last_entry.update_dataset(activities_heart_intraday["dataset"])
-            except exceptions.ObjectDoesNotExist:
+            except model.DoesNotExist:
                 model.objects.create(
                     user_profile=self.user_profile,
                     time_series=correspoding_time_series,
@@ -383,7 +383,10 @@ class FitbitRetriever:
             if existing_entries.count() == 0:
                 start_date = date.fromisoformat(self.user_profile_json["memberSince"])
             else:
-                start_date = existing_entries.last().date_time
+                if model == UserStepIntradayData or model == UserHeartRateIntradayData:
+                    start_date = existing_entries.last().time_series.date_time
+                else: 
+                    start_date = existing_entries.last().date_time
         if end_date is None:
             end_date = date.today()
         time_intervals = self.__calculate_time_intervals(start_date, end_date, duration)
@@ -426,7 +429,7 @@ class FitbitRetriever:
                 user_profile=self.user_profile,
                 date_time=date_time
             )
-        except exceptions.ObjectDoesNotExist:
+        except UserStepTimeSeries.DoesNotExist:
             return None
     
     def __get_heartrate_time_series(self, date_time: date):
@@ -435,7 +438,7 @@ class FitbitRetriever:
                 user_profile=self.user_profile,
                 date_time=date_time
             )
-        except exceptions.ObjectDoesNotExist:
+        except UserHeartRateTimeSeries.DoesNotExist:
             return None
 
     def __get_sleep_time_series(self, date_time: date):
@@ -444,7 +447,7 @@ class FitbitRetriever:
                 user_profile=self.user_profile,
                 date_time=date_time
             )
-        except exceptions.ObjectDoesNotExist:
+        except UserSleepTimeSeries.DoesNotExist:
             return None
 
     def __get_step_intraday_data(self, date_time: date):
@@ -453,7 +456,7 @@ class FitbitRetriever:
                 user_profile=self.user_profile,
                 time_series=self.__get_step_time_series(date_time=date_time)
             )
-        except exceptions.ObjectDoesNotExist:
+        except UserStepIntradayData.DoesNotExist:
             return None
 
     def __get_heartrate_intraday_data(self, date_time: date):
@@ -462,5 +465,5 @@ class FitbitRetriever:
                 user_profile=self.user_profile,
                 time_series=self.__get_heartrate_time_series(date_time=date_time)
             )
-        except exceptions.ObjectDoesNotExist:
+        except UserHeartRateIntradayData.DoesNotExist:
             return None

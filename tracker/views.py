@@ -1,6 +1,5 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-# from tracker.serializers import 
 from user.utils import Logger
 from rest_framework import permissions, status
 from tracker.utils import *
@@ -97,12 +96,17 @@ class TrackerAuthorizeView(APIView):
 
 class TrackerRefreshView(APIView):
     def put(self, request):
+        date_time = None
         action = 'User {} initialized a refresh request'.format(request.user.username)
+        if request.data.get('date_time') is not None:
+            date_time = date.fromisoformat(request.data.get('date_time'))
+            action = 'User {} initialized a refresh request for {}'.format(request.user.username, request.data.get('date_time'))
+        
         Logger(user=request.user, action=action).info()
         run_task(
             dict(
                 target=FitbitRetriever(request.user).retrieve_all,
-                args=(),
+                args=(date_time, date_time),
                 daemon=True,
             ),
         )
