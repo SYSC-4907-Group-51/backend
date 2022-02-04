@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate, login, logout
 from .utils import get_tokens_for_user, logout_user, Logger
 from tracker.models import *
+from datetime import date
 
 class UserRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -104,22 +105,38 @@ class UserStatusView(APIView):
 
 class UserSyncStatusView(APIView):
     def get(self, request):
+        date_time = None
+        if request.query_params.get('date_time') is not None:
+            date_time = date.fromisoformat(request.query_params.get('date_time'))
         try:
             user_profile = UserProfile.objects.get(user=request.user)
         except:
             pass
-
-        try:
-            user_sync_status_entries = UserSyncStatus.objects.filter(user_profile=user_profile)
-        except:
-            sync_status = []
+        
+        if date_time is not None:
+            try:
+                user_sync_status = UserSyncStatus.objects.get(user_profile=user_profile, date_time=date_time)
+            except:
+                sync_status = []
+            else:
+                sync_status = [
+                    dict(
+                        date_time=user_sync_status.date_time_uuid,
+                        sync_status=user_sync_status.get_sync_status()
+                    )
+                ]
         else:
-            sync_status = []
-            for item in user_sync_status_entries:
-                sync_status.append({
-                    'date_time': item.date_time_uuid,
-                    'status': item.get_sync_status()
-                })
+            try:
+                user_sync_status_entries = UserSyncStatus.objects.filter(user_profile=user_profile)
+            except:
+                sync_status = []
+            else:
+                sync_status = []
+                for item in user_sync_status_entries:
+                    sync_status.append({
+                        'date_time': item.date_time_uuid,
+                        'status': item.get_sync_status()
+                    })
         return Response(
             sync_status
         )

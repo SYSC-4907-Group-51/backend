@@ -133,30 +133,7 @@ Successful Status Code: `200 OK`
     },
     ...
   ],
-  "last_sync_time": "2022-02-03T16:45:47Z",
-  "sync_status": [
-    {
-      "date_time": "2021-10-09",
-      "status": [
-        true, // step_time_series
-        true, // heartrate_time_series
-        false, // sleep_time_series
-        false, // step_intraday_data
-        false // heartrate_intraday_data
-      ]
-    },
-    {
-      "date_time": "2021-10-10",
-      "status": [
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
-    },
-    ...
-  ]
+  "last_sync_time": "2022-02-03T16:45:47Z"
 }
 ```
 
@@ -164,6 +141,11 @@ Successful Status Code: `200 OK`
 
 ### Method
 `GET`
+
+### Query
+Optional: `?date_time=<date in yyyy-mm-dd>`
+
+eg. `?date_time=2021-01-01`
 
 ### Header
 Access token from the `/login` response
@@ -177,6 +159,8 @@ Access token from the `/login` response
 Not finalized
 
 Successful Status Code: `200 OK`
+
+No date:
 
 ```json
 [
@@ -201,6 +185,29 @@ Successful Status Code: `200 OK`
     ]
   },
   ...
+]
+```
+
+Specific date:
+
+```json
+[]
+```
+
+or
+
+```json
+[
+  {
+    "date_time": "2022-01-01",
+    "sync_status": [
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  }
 ]
 ```
 
