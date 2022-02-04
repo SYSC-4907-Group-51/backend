@@ -143,9 +143,9 @@ Successful Status Code: `200 OK`
 `GET`
 
 ### Query
-Optional: `?date_time=<date in yyyy-mm-dd>`
+Optional: `?date=<date in yyyy-mm-dd>`
 
-eg. `?date_time=2021-01-01`
+eg. `?date=2021-01-01`
 
 ### Header
 Access token from the `/login` response
@@ -165,7 +165,7 @@ No date:
 ```json
 [
   {
-    "date_time": "2021-10-09",
+    "date": "2021-10-09",
     "status": [
       true, // step_time_series
       true, // heartrate_time_series
@@ -175,7 +175,7 @@ No date:
     ]
   },
   {
-    "date_time": "2021-10-10",
+    "date": "2021-10-10",
     "status": [
       true,
       true,
@@ -199,7 +199,7 @@ or
 ```json
 [
   {
-    "date_time": "2022-01-01",
+    "date": "2022-01-01",
     "sync_status": [
       true,
       true,

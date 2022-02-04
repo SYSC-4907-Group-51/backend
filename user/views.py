@@ -106,8 +106,8 @@ class UserStatusView(APIView):
 class UserSyncStatusView(APIView):
     def get(self, request):
         date_time = None
-        if request.query_params.get('date_time') is not None:
-            date_time = date.fromisoformat(request.query_params.get('date_time'))
+        if request.query_params.get('date') is not None:
+            date_time = date.fromisoformat(request.query_params.get('date'))
         try:
             user_profile = UserProfile.objects.get(user=request.user)
         except:
@@ -134,7 +134,7 @@ class UserSyncStatusView(APIView):
                 sync_status = []
                 for item in user_sync_status_entries:
                     sync_status.append({
-                        'date_time': item.date_time_uuid,
+                        'date': item.date_time_uuid,
                         'status': item.get_sync_status()
                     })
         return Response(
