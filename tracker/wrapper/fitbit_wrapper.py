@@ -6,6 +6,7 @@ from user.models import User
 from django.utils.timezone import get_current_timezone, make_aware
 from datetime import datetime, timedelta, date
 from user.utils import Logger
+from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 
 FITBIT = {
     "ID": "23BJ8J",
@@ -100,15 +101,15 @@ class FitbitRetriever:
             self.scope = self.user_profile.scope
             self.is_authorized = self.user_profile.is_authorized
 
-    def retrieve_all(self, start_date: date=None, end_date: date=None):
+    def retrieve_all(self, start_date: date=None, end_date: date=None, force_update: bool=False):
         if type(start_date) is str:
             start_date = date.fromtimestamp(start_date)
         if type(end_date) is str:
             end_date = date.fromtimestamp(end_date)
-        if self.user.is_retrieving:
+        if self.user_profile.get_retrieving_status() and not force_update:
             return
         try:
-            self.user.update_retrieving_status(True)
+            self.user_profile.update_retrieving_status(True)
             self.save_user_profile()
             if self.is_authorized:
                 self.save_user_devices()
@@ -120,13 +121,13 @@ class FitbitRetriever:
         except HTTPTooManyRequests as e:
             action = 'Fail to retrieve User {} data because {}, reset after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs)
             Logger(user=self.user, action=action).warn()
-            self.user.update_retrieving_status(False)
         #     #TODO: add to job queue
         finally:
             self.calculate_sync_status()
-            self.user.update_retrieving_status(False)
+            self.user_profile.update_retrieving_status(False)
 
     def token_updater(self, token_dict):
+        # TODO: refresh token not updating?
         access_token = token_dict['access_token']
         refresh_token = token_dict['refresh_token']
         expires_at = datetime.fromtimestamp(token_dict['expires_at'], tz=get_current_timezone())
@@ -143,6 +144,8 @@ class FitbitRetriever:
         )
     
     def calculate_sync_status(self, start_date: date=None, end_date: date=None):
+        if self.user_profile_json == {}:
+            return
         if start_date is None:
             start_date = date.fromisoformat(self.user_profile_json["memberSince"])
         if end_date is None:
@@ -173,18 +176,23 @@ class FitbitRetriever:
         return
     
     def save_user_profile(self):
-        action = 'User {} Fitbit profile was updated.'.format(self.user.username)
-        Logger(user=self.user, action=action).info()
-        entry = UserProfile.objects.get(user=self.user)
+        self.user_profile = UserProfile.objects.get(user=self.user)
         try:
             self.user_profile_json = self.fitbit_obj.get_user_profile()['user']
         except HTTPUnauthorized as e:
             action = 'Fail to retrieve User {} data due to {}.'.format(self.user.username, "invalid authorization")
             Logger(user=self.user, action=action).warn()
-            entry.update_is_authorized(False)
+            self.user_profile.update_is_authorized(False)
+            self.is_authorized = False
+        except InvalidGrantError as e:
+            action = 'Fail to retrieve User {} data due to {}'.format(self.user.username, "invalid authorization")
+            Logger(user=self.user, action=action).warn()
+            self.user_profile.update_is_authorized(False)
             self.is_authorized = False
         else:
-            entry.update_user_profile(self.user_profile_json)
+            action = 'User {} Fitbit profile was updated.'.format(self.user.username)
+            Logger(user=self.user, action=action).info()
+            self.user_profile.update_user_profile(self.user_profile_json)
 
     def save_user_devices(self):
         def calc_last_sync_time(devices_dict):
@@ -196,8 +204,6 @@ class FitbitRetriever:
             return make_aware(last_sync_time)
 
         model = UserDevice
-        action = 'User {} Fitbit devices information was updated.'.format(self.user.username)
-        Logger(user=self.user, action=action).info()
         user_devices_json = self.fitbit_obj.get_devices()
         try:
             user_devices = model.objects.get(user_profile=self.user_profile)
@@ -210,6 +216,8 @@ class FitbitRetriever:
         else:
             user_devices.update_devices(user_devices_json)
             user_devices.update_last_sync_time(calc_last_sync_time(user_devices_json))
+        action = 'User {} Fitbit devices information was updated.'.format(self.user.username)
+        Logger(user=self.user, action=action).info()
         return user_devices
 
     def save_step_time_series(self, start_date: date=None, end_date: date=None):
@@ -412,8 +420,12 @@ class FitbitRetriever:
             for i in range(0, len(time_intervals) - 1):
                 endpoint_args["start_date"] = time_intervals[i]
                 endpoint_args["end_date"] = time_intervals[i+1]
-                new_entries_from_fitbit = endpoint(**endpoint_args)
-                items = self.__append_items(items, new_entries_from_fitbit)
+                try:
+                    new_entries_from_fitbit = endpoint(**endpoint_args)
+                except:
+                    return
+                else:
+                    items = self.__append_items(items, new_entries_from_fitbit)
         return items
 
     def __append_items(self, items: dict, data):

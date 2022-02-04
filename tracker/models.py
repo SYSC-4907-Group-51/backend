@@ -1,7 +1,7 @@
 from operator import is_
 from django.db import models
 from user.models import User
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils.timezone import make_aware
 
 # Create your models here.
@@ -39,6 +39,12 @@ class UserProfile(models.Model):
     def update_retrieving_status(self, value):
         self.is_retrieving = value
         self.save()
+
+    def get_retrieving_status(self):
+        # prevent retrieving multiple times in one hour
+        if self.updated_at < make_aware(datetime.today() - timedelta(hours=1)):
+            return True
+        return self.is_retrieving
 
 class UserDevice(models.Model):
     user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)

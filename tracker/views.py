@@ -107,7 +107,7 @@ class TrackerRefreshView(APIView):
         run_task(
             dict(
                 target=FitbitRetriever(request.user).retrieve_all,
-                args=(date_time, date_time),
+                args=(date_time, date_time, True),
                 daemon=True,
             ),
         )
