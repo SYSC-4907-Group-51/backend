@@ -14,3 +14,7 @@ def run_task(task):
 def run_tasks(tasks):
     for task in tasks:
         run_task(task)
+
+def sleep_then_run_task(task, sleep_time):
+    thread = threading.Timer(sleep_time, run_task, args=(task,))
+    thread.start()

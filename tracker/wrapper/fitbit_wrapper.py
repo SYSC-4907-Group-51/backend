@@ -7,6 +7,7 @@ from django.utils.timezone import get_current_timezone, make_aware
 from datetime import datetime, timedelta, date
 from user.utils import Logger
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
+from tracker.lib.thread import sleep_then_run_task
 
 FITBIT = {
     "ID": "23BJ8J",
@@ -69,16 +70,18 @@ class FitbitWrapper:
 
 class FitbitRetriever:
 
-    def __init__(self, user: User) -> None:
+    def __init__(self, user: User=None, user_profile: UserProfile=None) -> None:
         self.user = user
         self.access_token = None
         self.refresh_token = None
         self.expires_at = None
         self.user_id = None
         self.scope = None
-        self.user_profile = None
+        self.user_profile = user_profile
         self.user_profile_json = None
         self.is_authorized = False
+        if user is None and user_profile is None:
+            raise ValueError("user or user_profile must be specified")
         self.__get_db_profile()
         self.fitbit_obj = FitbitWrapper(
             access_token=self.access_token,
@@ -87,12 +90,14 @@ class FitbitRetriever:
             token_updater=self.token_updater
         )
 
-    def __get_db_profile(self):
+    def __get_db_profile(self) -> None:
         try:
             self.user_profile = UserProfile.objects.get(user=self.user)
         except UserProfile.DoesNotExist:
             pass
-        else:
+        finally:
+            if self.user is None:
+                self.user = self.user_profile.user
             self.user_profile_json = self.user_profile.user_profile
             self.access_token = self.user_profile.access_token
             self.refresh_token = self.user_profile.refresh_token
@@ -101,12 +106,14 @@ class FitbitRetriever:
             self.scope = self.user_profile.scope
             self.is_authorized = self.user_profile.is_authorized
 
-    def retrieve_all(self, start_date: date=None, end_date: date=None, force_update: bool=False):
+    def retrieve_all(self, start_date: date=None, end_date: date=None):
         if type(start_date) is str:
             start_date = date.fromtimestamp(start_date)
         if type(end_date) is str:
             end_date = date.fromtimestamp(end_date)
-        if self.user_profile.get_retrieving_status() and not force_update:
+        if self.user_profile.is_retrieving:
+            action = 'A retreiving task for User {} is already waiting or running.'.format(self.user.username)
+            Logger(user=self.user, action=action).info()
             return
         try:
             self.user_profile.update_retrieving_status(True)
@@ -118,34 +125,36 @@ class FitbitRetriever:
                 self.save_sleep_time_series(start_date=start_date, end_date=end_date)
                 self.save_step_intraday_data(start_date=start_date, end_date=end_date)
                 self.save_heartrate_intraday_data(start_date=start_date, end_date=end_date)
+            self.user_profile.update_retrieving_status(False)
         except HTTPTooManyRequests as e:
-            action = 'Fail to retrieve User {} data because {}, reset after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs)
+            action = 'Fail to retrieve User {} data because {}, retry after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs)
             Logger(user=self.user, action=action).warn()
-        #     #TODO: add to job queue
+            sleep_then_run_task(
+                task=dict(
+                    target=self.retrieve_all,
+                    args=(None, None, True,),
+                    daemon=True,
+                ),
+                sleep_time=e.retry_after_secs + 1,
+            )
         finally:
             self.calculate_sync_status()
-            self.user_profile.update_retrieving_status(False)
 
     def token_updater(self, token_dict):
         # TODO: refresh token not updating?
-        access_token = token_dict['access_token']
-        refresh_token = token_dict['refresh_token']
-        expires_at = datetime.fromtimestamp(token_dict['expires_at'], tz=get_current_timezone())
-        scope = token_dict['scope']
+        self.access_token = token_dict['access_token']
+        self.refresh_token = token_dict['refresh_token']
+        self.expires_at = datetime.fromtimestamp(token_dict['expires_at'], tz=get_current_timezone())
+        self.scope = token_dict['scope']
         user_account_id = token_dict['user_id']
-        UserProfile.objects.filter(
-            user_account_id=user_account_id
-        ).update(
-            access_token=access_token, 
-            refresh_token=refresh_token, 
-            expires_at=expires_at, 
-            scope=scope,
-            user_account_id=user_account_id
-        )
+        self.user_profile = UserProfile.objects.get(user=self.user)
+        self.user_profile.update_access_token(self.access_token)
+        self.user_profile.update_refresh_token(self.refresh_token)
+        self.user_profile.update_expires_at(self.expires_at)
+        self.user_profile.update_scope(self.scope)
+        self.user_profile.update_user_account_id(user_account_id)
     
     def calculate_sync_status(self, start_date: date=None, end_date: date=None):
-        if self.user_profile_json == {}:
-            return
         if start_date is None:
             start_date = date.fromisoformat(self.user_profile_json["memberSince"])
         if end_date is None:
@@ -222,14 +231,21 @@ class FitbitRetriever:
 
     def save_step_time_series(self, start_date: date=None, end_date: date=None):
         model = UserStepTimeSeries
-        user_step_time_series_from_fitbit = self.__retrieve_latest_date(
-            model=model,
-            duration=30,
-            action='User {} Fitbit step time series from {} to {} was updating.',
-            endpoint=self.fitbit_obj.get_step_time_series,
-            start_date=start_date,
-            end_date=end_date
-        )
+        error = None
+        try:
+            user_step_time_series_from_fitbit = self.__retrieve_latest_date(
+                model=model,
+                duration=30,
+                action='User {} Fitbit step time series from {} to {} was updating.',
+                endpoint=self.fitbit_obj.get_step_time_series,
+                start_date=start_date,
+                end_date=end_date
+            )
+            action = 'User {} Fitbit step time series was updated.'.format(self.user.username)
+        except Exception as e:
+            user_step_time_series_from_fitbit = e.args[-1]
+            action = 'User {} Fitbit step time series was partially updated till {}.'.format(self.user.username, user_step_time_series_from_fitbit[-1]['dateTime'])
+            error = e
         for item in user_step_time_series_from_fitbit:
             try:
                 last_entry = model.objects.get(date_time_uuid=item['dateTime'])
@@ -241,19 +257,27 @@ class FitbitRetriever:
                     date_time=date.fromisoformat(item['dateTime']),
                     steps=item["value"]
                 )
-        action = 'User {} Fitbit step time series was updated.'.format(self.user.username)
         Logger(user=self.user, action=action).info()
+        if error is not None:
+            raise error
     
     def save_heartrate_time_series(self, start_date: date=None, end_date: date=None):
         model = UserHeartRateTimeSeries
-        user_heartrate_time_series_from_fitbit = self.__retrieve_latest_date(
-            model=model,
-            duration=30,
-            action='User {} Fitbit heartrate time series from {} to {} was updating.',
-            endpoint=self.fitbit_obj.get_heartrate_time_series,
-            start_date=start_date,
-            end_date=end_date
-        )
+        error = None
+        try:
+            user_heartrate_time_series_from_fitbit = self.__retrieve_latest_date(
+                model=model,
+                duration=30,
+                action='User {} Fitbit heartrate time series from {} to {} was updating.',
+                endpoint=self.fitbit_obj.get_heartrate_time_series,
+                start_date=start_date,
+                end_date=end_date
+            )
+            action = 'User {} Fitbit heartrate time series was updated.'.format(self.user.username)
+        except Exception as e:
+            user_heartrate_time_series_from_fitbit = e.args[-1]
+            action = 'User {} Fitbit heartrate time series was partially updated till {}.'.format(self.user.username, user_heartrate_time_series_from_fitbit[-1]['dateTime'])
+            error = e
         for item in user_heartrate_time_series_from_fitbit:
             if "restingHeartRate" not in item["value"]:
                 item["value"]["restingHeartRate"] = 0
@@ -269,19 +293,27 @@ class FitbitRetriever:
                     resting_heartrate=item["value"]["restingHeartRate"],
                     heartrate_zones=item["value"]["heartRateZones"]
                 )
-        action = 'User {} Fitbit heartrate time series was updated.'.format(self.user.username)
         Logger(user=self.user, action=action).info()
+        if error is not None:
+            raise error
     
     def save_sleep_time_series(self, start_date: date=None, end_date: date=None):
         model = UserSleepTimeSeries
-        user_sleep_time_series_from_fitbit = self.__retrieve_latest_date(
-            model=model,
-            duration=30,
-            action='User {} Fitbit sleep time series from {} to {} was updating.',
-            endpoint=self.fitbit_obj.get_sleep_time_series,
-            start_date=start_date,
-            end_date=end_date
-        )
+        error = None
+        try:
+            user_sleep_time_series_from_fitbit = self.__retrieve_latest_date(
+                model=model,
+                duration=30,
+                action='User {} Fitbit sleep time series from {} to {} was updating.',
+                endpoint=self.fitbit_obj.get_sleep_time_series,
+                start_date=start_date,
+                end_date=end_date
+            )
+            action = 'User {} Fitbit sleep time series was updated.'.format(self.user.username)
+        except Exception as e:
+            user_sleep_time_series_from_fitbit = e.args[-1]
+            action = 'User {} Fitbit sleep time series was partially updated till {}.'.format(self.user.username, user_sleep_time_series_from_fitbit[-1]['dateTime'])
+            error = e
         for item in user_sleep_time_series_from_fitbit:
             if "data" not in item["levels"]:
                 item["levels"]["data"] = {}
@@ -317,19 +349,27 @@ class FitbitRetriever:
                     levels = item["levels"]["data"],
                     summary = item["levels"]["summary"],
                 )
-        action = 'User {} Fitbit sleep time series was updated.'.format(self.user.username)
         Logger(user=self.user, action=action).info()
+        if error is not None:
+            raise error
 
     def save_step_intraday_data(self, start_date: date=None, end_date: date=None):
         model = UserStepIntradayData
-        user_step_intraday_data_from_fitbit = self.__retrieve_latest_date(
-            model=model,
-            duration=1,
-            action='User {} Fitbit step intraday data from {} to {} was updating.',
-            endpoint=self.fitbit_obj.get_step_intraday_data,
-            start_date=start_date,
-            end_date=end_date
-        )
+        error = None
+        try:
+            user_step_intraday_data_from_fitbit = self.__retrieve_latest_date(
+                model=model,
+                duration=1,
+                action='User {} Fitbit step intraday data from {} to {} was updating.',
+                endpoint=self.fitbit_obj.get_step_intraday_data,
+                start_date=start_date,
+                end_date=end_date
+            )
+            action = 'User {} Fitbit step intraday data was updated.'.format(self.user.username)
+        except Exception as e:
+            user_step_intraday_data_from_fitbit = e.args[-1]
+            action = 'User {} Fitbit step intraday data was partially updated till {}.'.format(self.user.username, user_step_intraday_data_from_fitbit[-2]["activities-steps"][0]['dateTime'])
+            error = e
         for item in user_step_intraday_data_from_fitbit:
             activities_steps = item["activities-steps"][0]
             activities_steps_intraday = item["activities-steps-intraday"]
@@ -352,19 +392,27 @@ class FitbitRetriever:
                     dataset_interval=activities_steps_intraday["datasetInterval"],
                     dataset_type=activities_steps_intraday["datasetType"],
                 )
-        action = 'User {} Fitbit step intraday data was updated.'.format(self.user.username)
         Logger(user=self.user, action=action).info()
+        if error is not None:
+            raise error
 
     def save_heartrate_intraday_data(self, start_date: date=None, end_date: date=None):
         model = UserHeartRateIntradayData
-        user_heartrate_intraday_data_from_fitbit = self.__retrieve_latest_date(
-            model=model,
-            duration=1,
-            action='User {} Fitbit heartrate intraday data from {} to {} was updating.',
-            endpoint=self.fitbit_obj.get_heartrate_intraday_data,
-            start_date=start_date,
-            end_date=end_date
-        )
+        error = None
+        try:
+            user_heartrate_intraday_data_from_fitbit = self.__retrieve_latest_date(
+                model=model,
+                duration=1,
+                action='User {} Fitbit heartrate intraday data from {} to {} was updating.',
+                endpoint=self.fitbit_obj.get_heartrate_intraday_data,
+                start_date=start_date,
+                end_date=end_date
+            )
+            action = 'User {} Fitbit heartrate intraday data was updated.'.format(self.user.username)
+        except Exception as e:
+            user_heartrate_intraday_data_from_fitbit = e.args[-1]
+            action = 'User {} Fitbit heartrate intraday data was partially updated till {}.'.format(self.user.username, user_heartrate_intraday_data_from_fitbit[-2]["activities-heart"][0]['dateTime'])
+            error = e
         for item in user_heartrate_intraday_data_from_fitbit:
             activities_heart = item["activities-heart"][0]
             activities_heart_intraday = item["activities-heart-intraday"]
@@ -387,8 +435,9 @@ class FitbitRetriever:
                     dataset_interval=activities_heart_intraday["datasetInterval"],
                     dataset_type=activities_heart_intraday["datasetType"],
                 )
-        action = 'User {} Fitbit heartrate intraday data was updated.'.format(self.user.username)
         Logger(user=self.user, action=action).info()
+        if error is not None:
+            raise error
     
     def __retrieve_latest_date(self, model, action, duration, endpoint, start_date: date=None, end_date: date=None, detail_level: str=None):
         existing_entries = model.objects.filter(user_profile=self.user_profile)
@@ -422,8 +471,13 @@ class FitbitRetriever:
                 endpoint_args["end_date"] = time_intervals[i+1]
                 try:
                     new_entries_from_fitbit = endpoint(**endpoint_args)
-                except:
-                    return
+                except Exception as e:
+                    new_args = []
+                    for item in e.args:
+                        new_args.append(item)
+                    new_args.append(items)
+                    e.args = tuple(new_args)
+                    raise e
                 else:
                     items = self.__append_items(items, new_entries_from_fitbit)
         return items

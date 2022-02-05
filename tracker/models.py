@@ -39,12 +39,26 @@ class UserProfile(models.Model):
     def update_retrieving_status(self, value):
         self.is_retrieving = value
         self.save()
+    
+    def update_access_token(self, access_token):
+        self.access_token = access_token
+        self.save()
 
-    def get_retrieving_status(self):
-        # prevent retrieving multiple times in one hour
-        if self.updated_at < make_aware(datetime.today() - timedelta(hours=1)):
-            return True
-        return self.is_retrieving
+    def update_refresh_token(self, refresh_token):
+        self.refresh_token = refresh_token
+        self.save()
+
+    def update_expires_at(self, expires_at):
+        self.expires_at = expires_at
+        self.save()
+
+    def update_scope(self, scope):
+        self.scope = scope
+        self.save()
+
+    def update_user_account_id(self, user_account_id):
+        self.user_account_id = user_account_id
+        self.save()
 
 class UserDevice(models.Model):
     user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)

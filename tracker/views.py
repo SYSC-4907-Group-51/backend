@@ -45,25 +45,30 @@ class TrackerAuthorizeView(APIView):
         state_id = request.query_params.get('state')
         code = request.query_params.get('code')
         if not state_id or not code:
-            Response(
-                status=status.HTTP_400_BAD_REQUEST
+            #TODO: update redirect url
+            return Response(
+                headers={"Location": "/invaliderror"},
+                status=status.HTTP_307_TEMPORARY_REDIRECT
             )
         try:
             token_dict = self.fitbit_obj.get_token_dict(code)
         except Warning as e:
             return Response(
                 headers={'Location': '/mismatcherror'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_307_TEMPORARY_REDIRECT
             )
         except InvalidGrantError as e:
             return Response(
                 headers={"Location": "/invaliderror"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_307_TEMPORARY_REDIRECT
             )
         else:
             query_dict = get_user_with_state_id(state_id)
             if 'error' in query_dict:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    headers={"Location": "/invaliderror"},
+                    status=status.HTTP_307_TEMPORARY_REDIRECT
+                )
 
             action = 'User {} authorized Fitbit account'.format(query_dict['user'].username)
             Logger(user=query_dict['user'], action=action).info()
@@ -72,19 +77,16 @@ class TrackerAuthorizeView(APIView):
             expires_at = datetime.fromtimestamp(token_dict['expires_at'], tz=get_current_timezone())
             scope = token_dict['scope']
             user_account_id = token_dict['user_id']
-            UserProfile.objects.filter(
-                user=query_dict['user']
-            ).update(
-                access_token=access_token, 
-                refresh_token=refresh_token, 
-                expires_at=expires_at, 
-                scope=scope,
-                user_account_id=user_account_id,
-                is_authorized=True
-            )
+            user_profile = UserProfile.objects.get(user=query_dict['user'])
+            user_profile.update_access_token(access_token)
+            user_profile.update_refresh_token(refresh_token)
+            user_profile.update_expires_at(expires_at)
+            user_profile.update_scope(scope)
+            user_profile.update_user_account_id(user_account_id)
+            user_profile.update_is_authorized(True)
             run_task(
                 dict(
-                    target=FitbitRetriever(query_dict['user']).retrieve_all,
+                    target=FitbitRetriever(user_profile=user_profile).retrieve_all,
                     args=(),
                     daemon=True,
                 ),
@@ -104,10 +106,21 @@ class TrackerRefreshView(APIView):
             action = 'User {} initialized a refresh request for {}'.format(request.user.username, request.data.get('date'))
         
         Logger(user=request.user, action=action).info()
+        user_profile = UserProfile.objects.get(user=request.user)
+        if not user_profile.is_authorized:
+            return Response(
+                {'details': 'User is not authorized'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if user_profile.is_retrieving:
+            return Response(
+                {'details': 'A retreiving task is already waiting or running.'},
+                status=200
+            )
         run_task(
             dict(
-                target=FitbitRetriever(request.user).retrieve_all,
-                args=(date_time, date_time, True),
+                target=FitbitRetriever(user_profile=user_profile).retrieve_all,
+                args=(date_time, date_time,),
                 daemon=True,
             ),
         )
