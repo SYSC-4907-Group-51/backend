@@ -1,14 +1,13 @@
 from rest_framework import permissions
-from visualize.models import *
+from visualize.utils import decode_authorization_key
 
 class VisualizePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        if 'X-AUTHORIZATION' in request.headers:
-            authorization_key = request.headers['X-AUTHORIZATION']
-            try:
-                AuthorizationKey.objects.get(authorization_key=authorization_key)
-            except AuthorizationKey.DoesNotExist:
-                return False
+        authorization_key = request.headers.get('X-Authorization')
+        try:
+            decode_authorization_key(authorization_key)
             return True
-        return False
+        except Exception as e:
+            self.message = e.args[0]
+            return False

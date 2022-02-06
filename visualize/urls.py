@@ -9,4 +9,5 @@ urlpatterns = [
     path('view', views.VisualizeEntranceView.as_view()),
     path('time-series', views.VisualizeTimeSeriesView.as_view()),
     path('intraday', views.VisualizeIntradayView.as_view()),
+    path('refresh-authorization-key', views.VisualizeAuthorizationKeyRefreshView.as_view()),
 ]
