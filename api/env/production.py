@@ -5,3 +5,5 @@ SECRET_KEY = 'django-insecure-2wc94wb!nn46+lc%ctv*&6@9xfvly#42ny!ud4eb*$-jxz6cfr
 DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
+
+CSRF_TRUSTED_ORIGINS=['https://cap-api.gura.ch']

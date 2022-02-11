@@ -23,6 +23,8 @@ Password: pddyrfFkYW0nAb1BKJ1LVb5Ftov1xo8O/KCjgva2cCPqzcmBnaK5lXwd8pNbhMBe
 Email: admin@example.com
 ```
 
+Change `CSRF_TRUSTED_ORIGINS` in `api/env/production.py` to access `/admin`
+
 Note: To enable automatically retrieve data, the system must be **Linux** and have **cron** enabled
 
 ### After Initialization
