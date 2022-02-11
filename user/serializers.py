@@ -2,7 +2,7 @@ from rest_framework import serializers
 from user.models import User, Log
 from .utils import password_validator
 
-class UserRegisterSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         errors = password_validator(User(**validated_data), validated_data.get('password'))
@@ -16,7 +16,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'created_at', 'updated_at']
+        fields = ['username', 'password', 'first_name', 'last_name', 'email', 'created_at', 'updated_at']
         extra_kwargs = {
             'password': {'write_only': True}
         }

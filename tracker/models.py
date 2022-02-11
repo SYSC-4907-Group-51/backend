@@ -96,7 +96,7 @@ class UserStepTimeSeries(models.Model):
         self.steps = value
         self.save()
 
-class UserHeartRateTimeSeries(models.Model):
+class UserHeartrateTimeSeries(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     date_time_uuid = models.CharField(max_length=100, primary_key=True)
     date_time = models.DateField()
@@ -204,9 +204,9 @@ class UserStepIntradayData(models.Model):
         self.dataset = value
         self.save()
 
-class UserHeartRateIntradayData(models.Model):
+class UserHeartrateIntradayData(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    time_series = models.OneToOneField(UserHeartRateTimeSeries, on_delete=models.CASCADE)
+    time_series = models.OneToOneField(UserHeartrateTimeSeries, on_delete=models.CASCADE)
     dataset = models.JSONField(default=dict)
     dataset_interval = models.PositiveSmallIntegerField()
     dataset_type = models.CharField(max_length=100)
@@ -226,10 +226,10 @@ class UserSyncStatus(models.Model):
     date_time_uuid = models.CharField(max_length=100, primary_key=True)
     date_time = models.DateField()
     step_time_series = models.OneToOneField(UserStepTimeSeries, on_delete=models.SET_NULL, null=True)
-    heartrate_time_series = models.OneToOneField(UserHeartRateTimeSeries, on_delete=models.SET_NULL, null=True)
+    heartrate_time_series = models.OneToOneField(UserHeartrateTimeSeries, on_delete=models.SET_NULL, null=True)
     sleep_time_series = models.OneToOneField(UserSleepTimeSeries, on_delete=models.SET_NULL, null=True)
     step_intraday_data = models.OneToOneField(UserStepIntradayData, on_delete=models.SET_NULL, null=True)
-    heartrate_intraday_data = models.OneToOneField(UserHeartRateIntradayData, on_delete=models.SET_NULL, null=True)
+    heartrate_intraday_data = models.OneToOneField(UserHeartrateIntradayData, on_delete=models.SET_NULL, null=True)
 
     REQUIRED_FIELDS = ['user_profile', 'date_time_uuid', 'date_time']
 

@@ -65,7 +65,7 @@ class UserHeartRateTimeSeriesAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return False
 
-admin.site.register(UserHeartRateTimeSeries, UserHeartRateTimeSeriesAdmin)
+admin.site.register(UserHeartrateTimeSeries, UserHeartRateTimeSeriesAdmin)
 
 class UserSleepTimeSeriesAdmin(admin.ModelAdmin):
     list_display = ('user_profile', 'date_time', 'duration', 'efficiency', 'last_sync_time', 'start_time', 'end_time', 'minutes_after_wakeup', 'minutes_asleep', 'minutes_awake', 'minutes_to_fall_asleep', 'time_in_bed', 'last_sync_time',)
@@ -114,7 +114,7 @@ class UserHeartRateIntradayDataAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return False
 
-admin.site.register(UserHeartRateIntradayData, UserHeartRateIntradayDataAdmin)
+admin.site.register(UserHeartrateIntradayData, UserHeartRateIntradayDataAdmin)
 
 class UserSyncStatusAdmin(admin.ModelAdmin):
     list_display = ('user_profile', 'date_time', 'step_time_series', 'heartrate_time_series', 'sleep_time_series', 'step_intraday_data', 'heartrate_intraday_data',)

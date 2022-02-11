@@ -1,5 +1,6 @@
 from user.models import User, Log
-from user.serializers import UserRegisterSerializer, UserUpdateSerializer, UserDeleteSerializer, LogSerializer
+from user.serializers import *
+from tracker.serializers import *
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,14 +12,14 @@ from datetime import date
 class UserRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     def post(self, request):
-        serializer = UserRegisterSerializer(data=request.data)
+        serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
         action = 'User {} registered'.format(serializer.instance.username)
         Logger(user=serializer.instance, action=action).info()
 
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class UserLoginView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -32,18 +33,13 @@ class UserLoginView(APIView):
                 token = get_tokens_for_user(user)
                 action = 'User {} logged in successfully'.format(username)
                 Logger(user=user, action=action).info()
+                serializer = UserSerializer(user)
                 return Response(
                     {
-                        'id': user.id, 
-                        'username': user.username, 
-                        'first_name': user.first_name, 
-                        'last_name': user.last_name, 
-                        'email': user.email, 
-                        'created_at': user.created_at, 
-                        'updated_at': user.updated_at,
+                        **serializer.data,
                         **token
                     }, 
-                    status=200
+                    status=status.HTTP_200_OK
                 )
             else:
                 action = 'User {} failed to log in'.format(username)
@@ -55,9 +51,9 @@ class UserLoginView(APIView):
                 else:
                     Logger(user=user, action=action).warn()
                 finally:
-                    return Response({'details': 'Invalid username/password'}, status=400)
+                    return Response({'details': 'Invalid username/password'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            return Response(status=403)
+            Response({'details': 'No such user'}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLogoutView(APIView):
     def post(self, request):
@@ -67,11 +63,11 @@ class UserLogoutView(APIView):
         if status:
             action = 'User {} logged out successfully'.format(request_user.username)
             Logger(user=request_user, action=action).info()
-            return Response({'detail': 'Successfully Logged out'}, status=200)
+            return Response({'detail': 'Successfully Logged out'}, status=status.HTTP_200_OK)
         else:
             action = 'User {} failed to log out'.format(request_user.username)
             Logger(user=request_user, action=action).warn()
-            return Response({'detail': 'Invalid refresh token'}, status=400)
+            return Response({'detail': 'Unable to logout'}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserStatusView(APIView):
     def get(self, request):
@@ -79,8 +75,10 @@ class UserStatusView(APIView):
             user_profile = UserProfile.objects.get(user=request.user)
         except:
             is_authorized = False
+            profile_not_found = True
         else:
             is_authorized = user_profile.is_authorized
+            profile_not_found = False
 
         try:
             user_device = UserDevice.objects.get(user_profile=user_profile)
@@ -93,52 +91,49 @@ class UserStatusView(APIView):
 
         return Response(
             {
-                'id': request.user.id,
                 'username': request.user.username,
                 'first_name': request.user.first_name,
                 'last_name': request.user.last_name,
                 'is_authorized': is_authorized,
                 'devices': devices,
-                'last_sync_time': last_sync_time
-            }
+                'last_sync_time': last_sync_time,
+                'profile_not_found': profile_not_found
+            },
+            status=status.HTTP_200_OK
         )
 
 class UserSyncStatusView(APIView):
     def get(self, request):
         date_time = None
         if request.query_params.get('date') is not None:
-            date_time = date.fromisoformat(request.query_params.get('date'))
+            try:
+                date_time = date.fromisoformat(request.query_params.get('date'))
+            except:
+                return Response(
+                    {
+                        'details': 'Invalid date format',
+                        'format': 'YYYY-MM-DD'
+                    }, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         try:
             user_profile = UserProfile.objects.get(user=request.user)
         except:
-            pass
+            return Response(
+                {
+                    'details': 'User has not yet authorized'
+                }, 
+                status=status.HTTP_400_BAD_REQUEST
+            ) 
         
         if date_time is not None:
-            try:
-                user_sync_status = UserSyncStatus.objects.get(user_profile=user_profile, date_time=date_time)
-            except:
-                sync_status = []
-            else:
-                sync_status = [
-                    dict(
-                        date_time=user_sync_status.date_time_uuid,
-                        sync_status=user_sync_status.get_sync_status()
-                    )
-                ]
+            user_sync_status = UserSyncStatus.objects.filter(user_profile=user_profile, date_time=date_time)
         else:
-            try:
-                user_sync_status_entries = UserSyncStatus.objects.filter(user_profile=user_profile)
-            except:
-                sync_status = []
-            else:
-                sync_status = []
-                for item in user_sync_status_entries:
-                    sync_status.append({
-                        'date': item.date_time_uuid,
-                        'status': item.get_sync_status()
-                    })
+            user_sync_status = UserSyncStatus.objects.filter(user_profile=user_profile)
+        serializer = UserSyncStatusSerializer(user_sync_status, many=True)
         return Response(
-            sync_status
+            serializer.data,
+            status=status.HTTP_200_OK
         )
 
 class UserUpdateView(APIView):
@@ -150,7 +145,14 @@ class UserUpdateView(APIView):
         Logger(request.user, action).info()
 
         serializer.update(request.user, request.data)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        user_seriealizer = UserSerializer(request.user)
+        return Response(
+            {
+                'details': 'Successfully updated',
+                **user_seriealizer.data
+            },
+            status=status.HTTP_200_OK
+        )
 
 class UserDeleteView(APIView):
     def delete(self, request):
@@ -163,10 +165,15 @@ class UserDeleteView(APIView):
         Logger(request.user, action).warn()
 
         serializer.delete(request.user, request.data)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {
+                'details': 'Successfully deleted',
+            },
+            status=status.HTTP_200_OK
+        )
 
 class LogView(APIView):
     def get(self, request):
         logs = Log.objects.filter(user=request.user).order_by('-created_at')
         serializer = LogSerializer(logs, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

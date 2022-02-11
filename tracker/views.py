@@ -1,8 +1,9 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user.utils import Logger
-from rest_framework import permissions, status
+from rest_framework import status
 from tracker.utils import *
+from tracker.permissions import *
 from tracker.wrapper.fitbit_wrapper import *
 from tracker.lib.thread import run_task
 from django.utils.timezone import get_current_timezone
@@ -12,24 +13,10 @@ from visualize.models import *
 
 # Create your views here.
 class TrackerAuthorizeView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AuthorizationPermission]
     fitbit_obj = FitbitWrapper(None)
 
     def post(self, request):
-        if not request.user.is_authenticated:
-            return Response({
-                "detail": "Given token not valid for any token type",
-                "code": "token_not_valid",
-                "messages": [
-                    {
-                    "token_class": "AccessToken",
-                    "token_type": "access",
-                    "message": "Token is invalid or expired"
-                    }
-                ]
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
         url, state_id = self.fitbit_obj.get_authorization_url()
 
         action = 'User {} tried to authorize Fitbit account with state id: {}'.format(request.user.username, state_id)
@@ -37,8 +24,10 @@ class TrackerAuthorizeView(APIView):
 
         save_authorization_state_id(state_id, request.user)
         return Response(
-            {'authorization_url': url},
-            status=200,
+            {
+                'authorization_url': url
+            },
+            status=status.HTTP_201_CREATED,
         )
 
     def get(self, request):
@@ -48,26 +37,26 @@ class TrackerAuthorizeView(APIView):
             #TODO: update redirect url
             return Response(
                 headers={"Location": "/invaliderror"},
-                status=status.HTTP_307_TEMPORARY_REDIRECT
+                status=status.HTTP_302_FOUND
             )
         try:
             token_dict = self.fitbit_obj.get_token_dict(code)
         except Warning as e:
             return Response(
                 headers={'Location': '/mismatcherror'},
-                status=status.HTTP_307_TEMPORARY_REDIRECT
+                status=status.HTTP_302_FOUND
             )
         except InvalidGrantError as e:
             return Response(
                 headers={"Location": "/invaliderror"},
-                status=status.HTTP_307_TEMPORARY_REDIRECT
+                status=status.HTTP_302_FOUND
             )
         else:
             query_dict = get_user_with_state_id(state_id)
             if 'error' in query_dict:
                 return Response(
                     headers={"Location": "/invaliderror"},
-                    status=status.HTTP_307_TEMPORARY_REDIRECT
+                    status=status.HTTP_302_FOUND
                 )
 
             action = 'User {} authorized Fitbit account'.format(query_dict['user'].username)
@@ -93,8 +82,10 @@ class TrackerAuthorizeView(APIView):
             )
             # TODO: use header redirect here
             return Response(
-                {'details': 'Successfully authorized'},
-                status=200,
+                {
+                    'details': 'Successfully authorized'
+                },
+                status=status.HTTP_200_OK,
             )
 
 class TrackerRefreshView(APIView):
@@ -109,13 +100,17 @@ class TrackerRefreshView(APIView):
         user_profile = UserProfile.objects.get(user=request.user)
         if not user_profile.is_authorized:
             return Response(
-                {'details': 'User is not authorized'},
-                status=status.HTTP_400_BAD_REQUEST
+                {
+                    'details': 'User is no longer authorized'
+                },
+                status=status.HTTP_403_FORBIDDEN
             )
         if user_profile.is_retrieving:
             return Response(
-                {'details': 'A retreiving task is already waiting or running.'},
-                status=200
+                {
+                    'details': 'A retreiving task is already waiting or running.'
+                },
+                status=status.HTTP_403_FORBIDDEN
             )
         run_task(
             dict(
@@ -125,8 +120,10 @@ class TrackerRefreshView(APIView):
             ),
         )
         return Response(
-            {'details': 'Successed'},
-            status=200,
+            {
+                'details': 'Successed'
+            },
+            status=status.HTTP_202_ACCEPTED,
         )
 
 class TrackerDeleteView(APIView):
@@ -134,13 +131,17 @@ class TrackerDeleteView(APIView):
         user_created_keys = Key.objects.filter(user=request.user, is_available=True)
         if user_created_keys.count() > 0:
             return Response(
-                {'error': 'Keys are still in use, authorization cannot be deleted!'},
-                status=400,
+                {
+                    'details': 'Keys are still in use, authorization cannot be deleted!'
+                },
+                status=status.HTTP_403_FORBIDDEN,
             )
         action = 'User {} deleted the authorization for Fitbit'.format(request.user.username)
         Logger(user=request.user, action=action).info()
         UserProfile.objects.get(user=request.user).delete()
         return Response(
-            {'details': 'Successed'},
-            status=200,
+            {
+                'details': 'Successed'
+            },
+            status=status.HTTP_200_OK,
         )
