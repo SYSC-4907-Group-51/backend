@@ -28,9 +28,8 @@ Access token from the `/login` response
 ```
 
 ### Response
-Not finalized
-
-Successful Status Code: `201 Created`
+#### Succeed
+Status Code: `201 CREATED`
 
 ```json
 {
@@ -45,6 +44,18 @@ Successful Status Code: `201 Created`
  ]
 }
 ```
+#### Fail
+
+Case                                              | Status Code      | Body
+--------------------------------------------------|------------------|-------------------------------------------
+Unauthorized                                      | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
+The length of the permission array is less than 5 | 400 BAD REQUEST  | `{"details": "permissions must be 5 in length"}`
+The permission array cotains 5 `false`s           | 400 BAD REQUEST  | `{"details": "cannot create a key without permissions"}`
+The permission array cotains non-boolean          | 400 BAD REQUEST  | `{"details": "permissions must be boolean"}`
+User has not yet authorized their Fitbit account  | 403 FORBIDDEN    | `{"details": "user profile does not exist"}`
+User has not tracker data                         | 403 FORBIDDEN    | `{"details": "user sync status does not exist"}`
+User has reached maximum allowable key limit      | 403 FORBIDDEN    | `{"details": "Maximum allowable key limit is reached", "limit": <integer>}`
+
 
 ## /show-keys
 
@@ -60,9 +71,8 @@ Access token from the `/login` response
 `N/A`
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 [
@@ -93,6 +103,11 @@ Successful Status Code: `200 OK`
   ...
 ]
 ```
+#### Fail
+
+Case                                              | Status Code      | Body
+--------------------------------------------------|------------------|-------------------------------------------
+Unauthorized                                      | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 
 ## /delete-key
 
@@ -112,9 +127,14 @@ Access token from the `/login` response
 ```
 
 ### Response
-Not finalized
+#### Succeed
+Status Code: `200 OK`
 
-Successful Status Code: `204 No Content`
+#### Fail
+
+Case             | Status Code      | Body
+-----------------|------------------|-------------------------------------------
+Unauthorized     | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 
 ## /view
 
@@ -131,9 +151,8 @@ Successful Status Code: `204 No Content`
 `N/A`
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 {
@@ -214,6 +233,83 @@ or
   }
 }
 ```
+#### Fail
+
+Case                                  | Status Code      | Body
+--------------------------------------|------------------|-------------------------------------------
+`username` and `key` are not in query | 400 BAD REQUEST  | `{"details": "Invalid request"}`
+No such username                      | 400 BAD REQUEST  | `{"detail": "No such user"}`
+No such key                           | 400 BAD REQUEST  | `{"detail": "No such key"}`
+
+## /intraday
+
+### Method
+`GET`
+
+### Header
+Access token from the `/view` response
+
+`X-Authorization: Bearer ey...` 
+
+### Query
+`?type=<data type: step, heartrate>&date=<date in YYYY-MM-DD>`
+
+eg. `?type=heartrate&date=2022-01-01`
+
+### Response
+#### Succeed
+Status Code: `200 OK`
+
+```json
+{
+  "date": "2022-01-01",
+  "time_series": {
+    "resting_heartrate": 79,
+    "heartrate_zones": [
+      {
+        "caloriesOut": 2313.87425,
+        "max": 126,
+        "min": 30,
+        "minutes": 1418,
+        "name": "Out of Range"
+      },
+      {
+        "caloriesOut": 127.00550000000001,
+        "max": 149,
+        "min": 126,
+        "minutes": 18,
+        "name": "Fat Burn"
+      },
+      ...
+    ]
+  },
+  "data": [
+    {
+      "time": "00:00:00",
+      "value": 93
+    },
+    {
+      "time": "00:01:00",
+      "value": 98
+    },
+    ...
+  ],
+  "dataset_type": "minute",
+  "dataset_interval": 1
+}
+```
+
+#### Fail
+
+Case                                             | Status Code      | Body
+-------------------------------------------------|------------------|-------------------------------------------
+Unauthorized                                     | 401 UNAUTHORIZED | `{"detail": "Authentication credentials were not provided."}`
+`type` and `date` are not in query               | 400 BAD REQUEST  | `{"detail": "Invalid type or date"}`
+Invalid `date` format                            | 400 BAD REQUEST  | `{"detail": "Invalid date format", "format": "YYYY-MM-DD"}`
+No such user                                     | 400 BAD REQUEST  | `{"detail": "No such user"}`
+No data for requested `date`                     | 400 BAD REQUEST  | `{"detail": "No data for <date in YYYY-MM-DD>"}`
+No permission or no data for requested `type`    | 403 FORBIDDEN    | `{"detail": "No permission or no data available"}`
+No such `type`                                   | 403_FORBIDDEN    | `{"detail": "Invalid type", 'types': ["step", "heartrate"]}`
 
 ## /time-series
 
@@ -223,7 +319,7 @@ or
 ### Header
 Access token from the `/view` response
 
-`Authorization: Bearer ey...` 
+`X-Authorization: Bearer ey...` 
 
 ### Query
 `?type=<data type: step, heartrate, sleep>&start_date=<date in YYYY-MM-DD>&end_date=<date in YYYY-MM-DD>`
@@ -231,9 +327,8 @@ Access token from the `/view` response
 eg. `?type=sleep&start_date=2022-01-01&end_date=2022-01-02`
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 [
@@ -334,65 +429,18 @@ Successful Status Code: `200 OK`
   ...
 ]
 ```
+#### Fail
 
-## /intraday
-
-### Method
-`GET`
-
-### Header
-Access token from the `/view` response
-
-`Authorization: Bearer ey...` 
-
-### Query
-`?type=<data type: step, heartrate>&date=<date in YYYY-MM-DD>`
-
-eg. `?type=heartrate&date=2022-01-01`
-
-### Response
-Not finalized
-
-Successful Status Code: `200 OK`
-
-```json
-{
-  "date": "2022-01-01",
-  "time_series": {
-    "resting_heartrate": 79,
-    "heartrate_zones": [
-      {
-        "caloriesOut": 2313.87425,
-        "max": 126,
-        "min": 30,
-        "minutes": 1418,
-        "name": "Out of Range"
-      },
-      {
-        "caloriesOut": 127.00550000000001,
-        "max": 149,
-        "min": 126,
-        "minutes": 18,
-        "name": "Fat Burn"
-      },
-      ...
-    ]
-  },
-  "data": [
-    {
-      "time": "00:00:00",
-      "value": 93
-    },
-    {
-      "time": "00:01:00",
-      "value": 98
-    },
-    ...
-  ],
-  "dataset_type": "minute",
-  "dataset_interval": 1
-}
-```
+Case                                                                             | Status Code      | Body
+---------------------------------------------------------------------------------|------------------|-----------
+Unauthorized                                                                     | 401 UNAUTHORIZED | `{"detail": "Authentication credentials were not provided."}`
+`type` and `start_date` are not in query                                         | 400 BAD REQUEST  | `{"detail": "Invalid type or start_date or end_date"}`
+Invalid `start_date` or `end_date` format                                        | 400 BAD REQUEST  | `{"detail": "Invalid date format", "format": "YYYY-MM-DD"}`
+No such user                                                                     | 400 BAD REQUEST  | `{"detail": "No such user"}`
+No data available                                                                | 400 BAD REQUEST  | `{"detail": "No data available"}`
+No data available for requested `type` between `start_date` and `end_date` range | 400 BAD REQUEST  | `{"detail": "No data in between <start_date> and <end_date>"}`
+No permission for requested `type`                                               | 403 FORBIDDEN    | `{"detail": "No permission"}`
+No such `type`                                   | 403_FORBIDDEN    | `{"detail": "Invalid type", 'types': ["step", "heartrate", "sleep"]}`
 
 ## /refresh-authorization-key
 
@@ -402,18 +450,23 @@ Successful Status Code: `200 OK`
 ### Header
 Access token from the `/view` response
 
-`Authorization: Bearer ey...` 
+`X-Authorization: Bearer ey...` 
 
 ### Body
 `N/A`
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `201 CREATED`
 
 ```json
 {
   "access": "ey...", // new access key
 }
 ```
+
+#### Fail
+
+Case                                                                             | Status Code      | Body
+---------------------------------------------------------------------------------|------------------|-----------
+Unauthorized                                                                     | 401 UNAUTHORIZED | `{"detail": "Authentication credentials were not provided."}`

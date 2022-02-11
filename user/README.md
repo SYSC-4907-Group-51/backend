@@ -20,13 +20,11 @@
 ```
 
 ### Response
-Not finalized
-
-Successful Status Code: `201 Created`
+#### Succeed
+Status Code: `201 Created`
 
 ```json
 {
-  "id": 4, // user id
   "username": "test", // username
   "first_name": "test", // first name
   "last_name": "test", // last name
@@ -35,6 +33,13 @@ Successful Status Code: `201 Created`
   "updated_at": "2022-01-10T20:06:52.716159-05:00" // the time the user updated their profile
 }
 ```
+
+#### Fail
+
+Case                            | Status Code      | Body
+--------------------------------|------------------|-----------
+Invalid username/passowrd/email | 400 BAD REQUEST  | `{<reasons>}`
+
 
 ## /login
 
@@ -52,14 +57,11 @@ Successful Status Code: `201 Created`
 }
 ```
 
-### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 {
-  "id": 4, // user id
   "username": "test", // username
   "first_name": "test", // first name
   "last_name": "test", // last name
@@ -70,6 +72,13 @@ Successful Status Code: `200 OK`
   "access": "ey..." // access token to be put in the header for subsequence acess and user identification
 }
 ```
+
+#### Fail
+
+Case                      | Status Code      | Body
+--------------------------|------------------|-------------------------------------------
+Invalid username/passowrd | 400 BAD REQUEST  | `{"details": "Invalid username/password"}`
+No such user              | 400 BAD REQUEST  | `{"details": "No such user"}`
 
 ## /logout
 
@@ -85,15 +94,20 @@ Access token from the `/login` response
 `N/A`
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 {
   "detail": "Successfully Logged out"
 }
 ```
+#### Fail
+
+Case             | Status Code      | Body
+-----------------|------------------|--------------------------------------------------------------
+Unauthorized     | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
+Failed to logout | 400 BAD REQUEST  | `{"details": "Unable to logout"}`
 
 ## /status
 
@@ -109,17 +123,15 @@ Access token from the `/login` response
 `N/A`
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 {
-  "id": 2,
   "username": "test",
   "first_name": "test",
   "last_name": "test",
-  "is_authorized": true,
+  "is_authorized": true, // true for connected and is able to update, false for either not connected or not able to update
   "devices": [
     {
       "battery": "High",
@@ -133,9 +145,15 @@ Successful Status Code: `200 OK`
     },
     ...
   ],
-  "last_sync_time": "2022-02-03T16:45:47Z"
+  "last_sync_time": "2022-02-03T16:45:47Z",
+  "profile_not_found": false // true for connected user account, false for not connected
 }
 ```
+#### Fail
+
+Case         | Status Code      | Body
+-------------|------------------|--------------------------------------------------------------
+Unauthorized | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 
 ## /sync-status
 
@@ -155,10 +173,8 @@ Access token from the `/login` response
 ### Body
 `N/A`
 
-### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 No date:
 
@@ -211,6 +227,14 @@ or
 ]
 ```
 
+#### Fail
+
+Case                                        | Status Code      | Body
+--------------------------------------------|------------------|-------------------------------------------------
+Unauthorized                                | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
+Invalid `date` format                       | 400 BAD REQUEST  | `{"detail": "Invalid date format", "format": "YYYY-MM-DD"}`
+User has not connected their Fitbit account | 400 BAD REQUEST  | `{"detail": "User has not yet authorized"}`
+
 ## /update
 
 ### Method
@@ -235,10 +259,26 @@ Any of followings:
 }
 ```
 
-### Response
-Not finalized
+#### Succeed
+Status Code: `200 OK`
 
-Successful Status Code: `204 No Content`
+```json
+{
+    "details": "Successfully updated",
+    "username": "test", // username
+    "first_name": "test", // user profile first name
+    "last_name": "test", // user profile last name
+    "email": "test@exmaple.com" // user email
+}
+```
+
+#### Fail
+
+Case                            | Status Code      | Body
+--------------------------------|------------------|--------------------------------------------------------------
+Unauthorized                    | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
+Invalid username/passowrd/email | 400 BAD REQUEST  | `{<reasons>}`
+
 
 ## /delete
 
@@ -257,10 +297,21 @@ Access token from the `/login` response
 }
 ```
 
-### Response
-Not finalized
+#### Succeed
+Status Code: `200 OK`
 
-Successful Status Code: `204 No Content`
+```json
+{
+    "details": "Successfully deleted"
+}
+```
+
+#### Fail
+
+Case                    | Status Code      | Body
+------------------------|------------------|--------------------------------------------------------------
+Unauthorized            | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
+Password does not match | 400 BAD REQUEST  | `{"detail": "Password does not match"}`
 
 ## /logs
 
@@ -276,9 +327,8 @@ Access token from the `/login` response
 `N/A`
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 [
@@ -298,30 +348,39 @@ Successful Status Code: `200 OK`
 ]
 ```
 
+#### Fail
+
+Case         | Status Code      | Body
+-------------|------------------|--------------------------------------------------------------
+Unauthorized | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
+
 ## /token-refresh
 
 ### Method
 `GET`
 
 ### Header
-
 `N/A` 
 
 ### Body
 ```json
 {
     "refresh":"ey..." // Requeired: refresh token from the login response
-    
 }
 ```
 
 ### Response
-Not finalized
-
-Successful Status Code: `200 OK`
+#### Succeed
+Status Code: `200 OK`
 
 ```json
 {
   "access": "ey..." // new access token for subsequence accesses
 }
 ```
+
+#### Fail
+
+Case                    | Status Code      | Body
+------------------------|------------------|--------------------------------------------------------------
+Invalid `refresh` token | 401 UNAUTHORIZED | `{"detail": "Token is invalid or expired", "code": "token_not_valid"}`
