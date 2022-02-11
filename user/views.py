@@ -26,34 +26,30 @@ class UserLoginView(APIView):
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
-        try:
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                token = get_tokens_for_user(user)
-                action = 'User {} logged in successfully'.format(username)
-                Logger(user=user, action=action).info()
-                serializer = UserSerializer(user)
-                return Response(
-                    {
-                        **serializer.data,
-                        **token
-                    }, 
-                    status=status.HTTP_200_OK
-                )
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            token = get_tokens_for_user(user)
+            action = 'User {} logged in successfully'.format(username)
+            Logger(user=user, action=action).info()
+            serializer = UserSerializer(user)
+            return Response(
+                {
+                    **serializer.data,
+                    **token
+                }, 
+                status=status.HTTP_200_OK
+            )
+        else:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                return Response({'detail': 'No such user'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 action = 'User {} failed to log in'.format(username)
-                # get User from username
-                try:
-                    user = User.objects.get(username=username)
-                except:
-                    pass
-                else:
-                    Logger(user=user, action=action).warn()
-                finally:
-                    return Response({'detail': 'Invalid username/password'}, status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            Response({'detail': 'No such user'}, status=status.HTTP_400_BAD_REQUEST)
+                Logger(user=user, action=action).warn()
+                return Response({'detail': 'Invalid username/password'}, status=status.HTTP_400_BAD_REQUEST)
+        
 
 class UserLogoutView(APIView):
     def post(self, request):
