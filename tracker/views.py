@@ -10,6 +10,7 @@ from django.utils.timezone import get_current_timezone
 from datetime import datetime
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from visualize.models import *
+from django.conf import settings
 
 # Create your views here.
 class TrackerAuthorizeView(APIView):
@@ -36,26 +37,26 @@ class TrackerAuthorizeView(APIView):
         if not state_id or not code:
             #TODO: update redirect url
             return Response(
-                headers={"Location": "/invaliderror"},
+                headers={"Location": "{}/invaliderror".format(settings.UTILS_CONSTANTS["DOMAIN"])},
                 status=status.HTTP_302_FOUND
             )
         try:
             token_dict = self.fitbit_obj.get_token_dict(code)
         except Warning as e:
             return Response(
-                headers={'Location': '/mismatcherror'},
+                headers={'Location': '{}/mismatcherror'.format(settings.UTILS_CONSTANTS["DOMAIN"])},
                 status=status.HTTP_302_FOUND
             )
         except InvalidGrantError as e:
             return Response(
-                headers={"Location": "/invaliderror"},
+                headers={"Location": "{}/invaliderror".format(settings.UTILS_CONSTANTS["DOMAIN"])},
                 status=status.HTTP_302_FOUND
             )
         else:
             query_dict = get_user_with_state_id(state_id)
             if 'error' in query_dict:
                 return Response(
-                    headers={"Location": "/invaliderror"},
+                    headers={"Location": "{}/invaliderror".format(settings.UTILS_CONSTANTS["DOMAIN"])},
                     status=status.HTTP_302_FOUND
                 )
 
@@ -80,12 +81,9 @@ class TrackerAuthorizeView(APIView):
                     daemon=True,
                 ),
             )
-            # TODO: use header redirect here
             return Response(
-                {
-                    'detail': 'Successfully authorized'
-                },
-                status=status.HTTP_200_OK,
+                headers={"Location": "{}/share".format(settings.UTILS_CONSTANTS["DOMAIN"])},
+                status=status.HTTP_302_FOUND,
             )
 
 class TrackerRefreshView(APIView):

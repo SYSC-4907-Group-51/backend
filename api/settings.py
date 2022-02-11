@@ -119,6 +119,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT =  os.path.join(BASE_DIR, 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -142,5 +143,10 @@ AUTH_USER_MODEL = 'user.User'
 UTILS_CONSTANTS = {
     "KEY_LENGTH": 6,
     "RE_GENERATE_KEY_LIMIT": 10,
-    "AUTHORIZATION_KEY_EXP_TIME_IN_HOURS": 1
+    "AUTHORIZATION_KEY_EXP_TIME_IN_HOURS": 1,
+    "DOMAIN": "https://cap.gura.ch/",
 }
+
+CRONJOBS = [
+    ('0 */6 * * *', 'api.cronjob.retrieve_all_user_data') # Every 6 hours
+]
