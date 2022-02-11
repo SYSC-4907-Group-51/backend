@@ -49,12 +49,12 @@ Status Code: `201 CREATED`
 Case                                              | Status Code      | Body
 --------------------------------------------------|------------------|-------------------------------------------
 Unauthorized                                      | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
-The length of the permission array is less than 5 | 400 BAD REQUEST  | `{"details": "permissions must be 5 in length"}`
-The permission array cotains 5 `false`s           | 400 BAD REQUEST  | `{"details": "cannot create a key without permissions"}`
-The permission array cotains non-boolean          | 400 BAD REQUEST  | `{"details": "permissions must be boolean"}`
-User has not yet authorized their Fitbit account  | 403 FORBIDDEN    | `{"details": "user profile does not exist"}`
-User has not tracker data                         | 403 FORBIDDEN    | `{"details": "user sync status does not exist"}`
-User has reached maximum allowable key limit      | 403 FORBIDDEN    | `{"details": "Maximum allowable key limit is reached", "limit": <integer>}`
+The length of the permission array is less than 5 | 400 BAD REQUEST  | `{"detail": "permissions must be 5 in length"}`
+The permission array cotains 5 `false`s           | 400 BAD REQUEST  | `{"detail": "cannot create a key without permissions"}`
+The permission array cotains non-boolean          | 400 BAD REQUEST  | `{"detail": "permissions must be boolean"}`
+User has not yet authorized their Fitbit account  | 403 FORBIDDEN    | `{"detail": "user profile does not exist"}`
+User has not tracker data                         | 403 FORBIDDEN    | `{"detail": "user sync status does not exist"}`
+User has reached maximum allowable key limit      | 403 FORBIDDEN    | `{"detail": "Maximum allowable key limit is reached", "limit": <integer>}`
 
 
 ## /show-keys
@@ -237,7 +237,7 @@ or
 
 Case                                  | Status Code      | Body
 --------------------------------------|------------------|-------------------------------------------
-`username` and `key` are not in query | 400 BAD REQUEST  | `{"details": "Invalid request"}`
+`username` and `key` are not in query | 400 BAD REQUEST  | `{"detail": "Invalid request"}`
 No such username                      | 400 BAD REQUEST  | `{"detail": "No such user"}`
 No such key                           | 400 BAD REQUEST  | `{"detail": "No such key"}`
 

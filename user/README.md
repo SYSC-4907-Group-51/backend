@@ -77,8 +77,8 @@ Status Code: `200 OK`
 
 Case                      | Status Code      | Body
 --------------------------|------------------|-------------------------------------------
-Invalid username/passowrd | 400 BAD REQUEST  | `{"details": "Invalid username/password"}`
-No such user              | 400 BAD REQUEST  | `{"details": "No such user"}`
+Invalid username/passowrd | 400 BAD REQUEST  | `{"detail": "Invalid username/password"}`
+No such user              | 400 BAD REQUEST  | `{"detail": "No such user"}`
 
 ## /logout
 
@@ -107,7 +107,7 @@ Status Code: `200 OK`
 Case             | Status Code      | Body
 -----------------|------------------|--------------------------------------------------------------
 Unauthorized     | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
-Failed to logout | 400 BAD REQUEST  | `{"details": "Unable to logout"}`
+Failed to logout | 400 BAD REQUEST  | `{"detail": "Unable to logout"}`
 
 ## /status
 
@@ -264,7 +264,7 @@ Status Code: `200 OK`
 
 ```json
 {
-    "details": "Successfully updated",
+    "detail": "Successfully updated",
     "username": "test", // username
     "first_name": "test", // user profile first name
     "last_name": "test", // user profile last name
@@ -302,7 +302,7 @@ Status Code: `200 OK`
 
 ```json
 {
-    "details": "Successfully deleted"
+    "detail": "Successfully deleted"
 }
 ```
 

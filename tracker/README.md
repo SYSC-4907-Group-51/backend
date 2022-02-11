@@ -91,8 +91,8 @@ Status Code: `202 ACCEPTED`
 Case                                           | Status Code      | Body
 -----------------------------------------------|------------------|------------------------------------------
 Unauthorized                                   | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
-User's Fitbit authorization is no longer valid | 403 FORBIDDEN | `{"details": "User is no longer authorized"}`
-A retrieving task is already queued            | 403 FORBIDDEN | `{"details": "A retreiving task is already waiting or running."}`
+User's Fitbit authorization is no longer valid | 403 FORBIDDEN | `{"detail": "User is no longer authorized"}`
+A retrieving task is already queued            | 403 FORBIDDEN | `{"detail": "A retreiving task is already waiting or running."}`
 
 
 ## /delete
@@ -121,4 +121,4 @@ Status Code: `200 OK`
 Case                                      | Status Code      | Body
 ------------------------------------------|------------------|------------------------------------------
 Unauthorized                              | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
-User have available keys in their account | 403 FORBIDDEN    | `{"details": "Keys are still in use, authorization cannot be deleted!"}`
+User have available keys in their account | 403 FORBIDDEN    | `{"detail": "Keys are still in use, authorization cannot be deleted!"}`

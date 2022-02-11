@@ -27,14 +27,14 @@ class KeyCreateView(APIView):
         if len(request.data.get('permissions', [])) != 5:
             return Response(
                 {
-                    'details': 'permissions must be 5 in length'
+                    'detail': 'permissions must be 5 in length'
                 }, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         if sum(request.data.get('permissions')) == 0:
             return Response(
                 {
-                    'details': 'cannot create a key without permissions'
+                    'detail': 'cannot create a key without permissions'
                 }, 
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -42,7 +42,7 @@ class KeyCreateView(APIView):
             if type(permission) is not bool:
                 return Response(
                     {
-                        'details': 'permissions must be boolean'
+                        'detail': 'permissions must be boolean'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -52,7 +52,7 @@ class KeyCreateView(APIView):
         except UserProfile.DoesNotExist:
             return Response(
                 {
-                    'details': 'user profile does not exist'
+                    'detail': 'user profile does not exist'
                 }, 
                 status=status.HTTP_403_FORBIDDEN
             )
@@ -61,7 +61,7 @@ class KeyCreateView(APIView):
             if user_sync_status_objs.count() == 0:
                 return Response(
                     {
-                        'details': 'user sync status does not exist'
+                        'detail': 'user sync status does not exist'
                     }, 
                     status=status.HTTP_403_FORBIDDEN
                 )
@@ -72,7 +72,7 @@ class KeyCreateView(APIView):
 
             return Response(
                 {
-                    'details': 'Maximum allowable key limit is reached',
+                    'detail': 'Maximum allowable key limit is reached',
                     'limit': settings.UTILS_CONSTANTS['RE_GENERATE_KEY_LIMIT']
                 }, 
                 status=status.HTTP_403_FORBIDDEN
@@ -134,7 +134,7 @@ class KeyDeleteView(APIView):
 
         return Response(
             {
-                'details': 'Successfully deleted',
+                'detail': 'Successfully deleted',
             },
             status=status.HTTP_200_OK
         )
@@ -148,7 +148,7 @@ class VisualizeEntranceView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'No such user'
+                        'detail': 'No such user'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -158,7 +158,7 @@ class VisualizeEntranceView(APIView):
                 except:
                     return Response(
                         {
-                            'details': 'No such key'
+                            'detail': 'No such key'
                         }, 
                         status=status.HTTP_400_BAD_REQUEST
                     )
@@ -213,7 +213,7 @@ class VisualizeEntranceView(APIView):
         else:
             return Response(
                 {
-                    'details': 'Invalid request'
+                    'detail': 'Invalid request'
                 }, 
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -231,7 +231,7 @@ class VisualizeIntradayView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'Invalid date format',
+                        'detail': 'Invalid date format',
                         'format': 'YYYY-MM-DD'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
@@ -243,7 +243,7 @@ class VisualizeIntradayView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'No such user'
+                        'detail': 'No such user'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -253,7 +253,7 @@ class VisualizeIntradayView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'No data for {}'.format(data_date)
+                        'detail': 'No data for {}'.format(data_date)
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -268,7 +268,7 @@ class VisualizeIntradayView(APIView):
                 else:
                     return Response(
                         {
-                            'details': 'No permission or no data available'
+                            'detail': 'No permission or no data available'
                         }, 
                         status=status.HTTP_403_FORBIDDEN
                     )
@@ -282,14 +282,14 @@ class VisualizeIntradayView(APIView):
                 else:
                     return Response(
                         {
-                            'details': 'No permission or no data available'
+                            'detail': 'No permission or no data available'
                         },
                         status=status.HTTP_403_FORBIDDEN
                     )
             else:
                 return Response(
                     {
-                        'details': 'Invalid type',
+                        'detail': 'Invalid type',
                         'types' : ['step', 'heartrate']
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
@@ -297,7 +297,7 @@ class VisualizeIntradayView(APIView):
 
         return Response(
             {
-                'details': 'Invalid type or date'
+                'detail': 'Invalid type or date'
             }, 
             status=status.HTTP_400_BAD_REQUEST
         )
@@ -316,7 +316,7 @@ class VisualizeTimeSeriesView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'Invalid date format',
+                        'detail': 'Invalid date format',
                         'date_format': 'YYYY-MM-DD'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
@@ -328,7 +328,7 @@ class VisualizeTimeSeriesView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'No such user'
+                        'detail': 'No such user'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -338,7 +338,7 @@ class VisualizeTimeSeriesView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'No data available'
+                        'detail': 'No data available'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -346,7 +346,7 @@ class VisualizeTimeSeriesView(APIView):
             if user_sync_status_entries.count() == 0:
                 return Response(
                     {
-                        'details': 'No data available'
+                        'detail': 'No data available'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -362,7 +362,7 @@ class VisualizeTimeSeriesView(APIView):
                 except:
                     return Response(
                         {
-                            'details': 'Invalid date format',
+                            'detail': 'Invalid date format',
                             'format': 'YYYY-MM-DD'
                         }, 
                         status=status.HTTP_400_BAD_REQUEST
@@ -378,7 +378,7 @@ class VisualizeTimeSeriesView(APIView):
                     if len(serializer.data) == 0:
                         return Response(
                             {
-                                'details': 'No data in between {} and {}'.format(data_start_date, data_end_date)
+                                'detail': 'No data in between {} and {}'.format(data_start_date, data_end_date)
                             }, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
@@ -389,7 +389,7 @@ class VisualizeTimeSeriesView(APIView):
                 else:
                     return Response(
                         {
-                            'details': 'No permission'
+                            'detail': 'No permission'
                         }, 
                         status=status.HTTP_403_FORBIDDEN
                     )
@@ -400,7 +400,7 @@ class VisualizeTimeSeriesView(APIView):
                     if len(serializer.data) == 0:
                         return Response(
                             {
-                                'details': 'No data in between {} and {}'.format(data_start_date, data_end_date)
+                                'detail': 'No data in between {} and {}'.format(data_start_date, data_end_date)
                             }, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
@@ -411,7 +411,7 @@ class VisualizeTimeSeriesView(APIView):
                 else:
                     return Response(
                         {
-                            'details': 'No permission'
+                            'detail': 'No permission'
                         }, 
                         status=status.HTTP_403_FORBIDDEN
                     )
@@ -422,7 +422,7 @@ class VisualizeTimeSeriesView(APIView):
                     if len(serializer.data) == 0:
                         return Response(
                             {
-                                'details': 'No data in between {} and {}'.format(data_start_date, data_end_date)
+                                'detail': 'No data in between {} and {}'.format(data_start_date, data_end_date)
                             }, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
@@ -433,21 +433,21 @@ class VisualizeTimeSeriesView(APIView):
                 else:
                     return Response(
                         {
-                            'details': 'No permission'
+                            'detail': 'No permission'
                         }, 
                         status=status.HTTP_403_FORBIDDEN
                     )
             else:
                 return Response(
                     {
-                        'details': 'Invalid type',
+                        'detail': 'Invalid type',
                         'types': ['step', 'heartrate', 'sleep']
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
         return Response(
             {
-                'details': 'Invalid type or start_date'
+                'detail': 'Invalid type or start_date'
             }, 
             status=status.HTTP_400_BAD_REQUEST
         )

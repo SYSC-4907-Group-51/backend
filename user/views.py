@@ -51,9 +51,9 @@ class UserLoginView(APIView):
                 else:
                     Logger(user=user, action=action).warn()
                 finally:
-                    return Response({'details': 'Invalid username/password'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'detail': 'Invalid username/password'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            Response({'details': 'No such user'}, status=status.HTTP_400_BAD_REQUEST)
+            Response({'detail': 'No such user'}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLogoutView(APIView):
     def post(self, request):
@@ -111,7 +111,7 @@ class UserSyncStatusView(APIView):
             except:
                 return Response(
                     {
-                        'details': 'Invalid date format',
+                        'detail': 'Invalid date format',
                         'format': 'YYYY-MM-DD'
                     }, 
                     status=status.HTTP_400_BAD_REQUEST
@@ -121,7 +121,7 @@ class UserSyncStatusView(APIView):
         except:
             return Response(
                 {
-                    'details': 'User has not yet authorized'
+                    'detail': 'User has not yet authorized'
                 }, 
                 status=status.HTTP_400_BAD_REQUEST
             ) 
@@ -148,7 +148,7 @@ class UserUpdateView(APIView):
         user_seriealizer = UserSerializer(request.user)
         return Response(
             {
-                'details': 'Successfully updated',
+                'detail': 'Successfully updated',
                 **user_seriealizer.data
             },
             status=status.HTTP_200_OK
@@ -167,7 +167,7 @@ class UserDeleteView(APIView):
         serializer.delete(request.user, request.data)
         return Response(
             {
-                'details': 'Successfully deleted',
+                'detail': 'Successfully deleted',
             },
             status=status.HTTP_200_OK
         )

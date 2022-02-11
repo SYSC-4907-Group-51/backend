@@ -83,7 +83,7 @@ class TrackerAuthorizeView(APIView):
             # TODO: use header redirect here
             return Response(
                 {
-                    'details': 'Successfully authorized'
+                    'detail': 'Successfully authorized'
                 },
                 status=status.HTTP_200_OK,
             )
@@ -101,14 +101,14 @@ class TrackerRefreshView(APIView):
         if not user_profile.is_authorized:
             return Response(
                 {
-                    'details': 'User is no longer authorized'
+                    'detail': 'User is no longer authorized'
                 },
                 status=status.HTTP_403_FORBIDDEN
             )
         if user_profile.is_retrieving:
             return Response(
                 {
-                    'details': 'A retreiving task is already waiting or running.'
+                    'detail': 'A retreiving task is already waiting or running.'
                 },
                 status=status.HTTP_403_FORBIDDEN
             )
@@ -121,7 +121,7 @@ class TrackerRefreshView(APIView):
         )
         return Response(
             {
-                'details': 'Successed'
+                'detail': 'Successed'
             },
             status=status.HTTP_202_ACCEPTED,
         )
@@ -132,7 +132,7 @@ class TrackerDeleteView(APIView):
         if user_created_keys.count() > 0:
             return Response(
                 {
-                    'details': 'Keys are still in use, authorization cannot be deleted!'
+                    'detail': 'Keys are still in use, authorization cannot be deleted!'
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -141,7 +141,7 @@ class TrackerDeleteView(APIView):
         UserProfile.objects.get(user=request.user).delete()
         return Response(
             {
-                'details': 'Successed'
+                'detail': 'Successed'
             },
             status=status.HTTP_200_OK,
         )
