@@ -80,6 +80,7 @@ class FitbitRetriever:
         self.user_profile = user_profile
         self.user_profile_json = None
         self.is_authorized = False
+        self.__partial_entries = None
         if user is None and user_profile is None:
             raise ValueError("user or user_profile must be specified")
         self.__get_db_profile()
@@ -106,12 +107,12 @@ class FitbitRetriever:
             self.scope = self.user_profile.scope
             self.is_authorized = self.user_profile.is_authorized
 
-    def retrieve_all(self, start_date: date=None, end_date: date=None):
+    def retrieve_all(self, start_date: date=None, end_date: date=None, force_update: bool=False) -> None:
         if type(start_date) is str:
             start_date = date.fromtimestamp(start_date)
         if type(end_date) is str:
             end_date = date.fromtimestamp(end_date)
-        if self.user_profile.is_retrieving:
+        if self.user_profile.is_retrieving and not force_update:
             action = 'A retreiving task for User {} is already waiting or running.'.format(self.user.username)
             Logger(user=self.user, action=action).info()
             return
@@ -132,16 +133,15 @@ class FitbitRetriever:
             sleep_then_run_task(
                 task=dict(
                     target=self.retrieve_all,
-                    args=(None, None, True,),
+                    args=(None, None, True),
                     daemon=True,
                 ),
-                sleep_time=e.retry_after_secs + 1,
+                sleep_time=e.retry_after_secs + 600,
             )
         finally:
             self.calculate_sync_status()
 
     def token_updater(self, token_dict):
-        # TODO: refresh token not updating?
         self.access_token = token_dict['access_token']
         self.refresh_token = token_dict['refresh_token']
         self.expires_at = datetime.fromtimestamp(token_dict['expires_at'], tz=get_current_timezone())
@@ -243,8 +243,9 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit step time series was updated.'.format(self.user.username)
         except Exception as e:
-            user_step_time_series_from_fitbit = e.args[-1]
-            action = 'User {} Fitbit step time series was partially updated till {}.'.format(self.user.username, user_step_time_series_from_fitbit[-1]['dateTime'])
+            if self.__partial_entries is not None:
+                user_step_time_series_from_fitbit = self.__partial_entries
+                action = 'User {} Fitbit step time series was partially updated till {}.'.format(self.user.username, user_step_time_series_from_fitbit[-1]['dateTime'])
             error = e
         for item in user_step_time_series_from_fitbit:
             try:
@@ -262,7 +263,7 @@ class FitbitRetriever:
             raise error
     
     def save_heartrate_time_series(self, start_date: date=None, end_date: date=None):
-        model = UserHeartRateTimeSeries
+        model = UserHeartrateTimeSeries
         error = None
         try:
             user_heartrate_time_series_from_fitbit = self.__retrieve_latest_date(
@@ -275,8 +276,9 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit heartrate time series was updated.'.format(self.user.username)
         except Exception as e:
-            user_heartrate_time_series_from_fitbit = e.args[-1]
-            action = 'User {} Fitbit heartrate time series was partially updated till {}.'.format(self.user.username, user_heartrate_time_series_from_fitbit[-1]['dateTime'])
+            if self.__partial_entries is not None:
+                user_heartrate_time_series_from_fitbit = self.__partial_entries
+                action = 'User {} Fitbit heartrate time series was partially updated till {}.'.format(self.user.username, user_heartrate_time_series_from_fitbit[-1]['dateTime'])
             error = e
         for item in user_heartrate_time_series_from_fitbit:
             if "restingHeartRate" not in item["value"]:
@@ -311,8 +313,9 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit sleep time series was updated.'.format(self.user.username)
         except Exception as e:
-            user_sleep_time_series_from_fitbit = e.args[-1]
-            action = 'User {} Fitbit sleep time series was partially updated till {}.'.format(self.user.username, user_sleep_time_series_from_fitbit[-1]['dateTime'])
+            if self.__partial_entries is not None:
+                user_sleep_time_series_from_fitbit = self.__partial_entries
+                action = 'User {} Fitbit sleep time series was partially updated till {}.'.format(self.user.username, user_sleep_time_series_from_fitbit[-1]['dateTime'])
             error = e
         for item in user_sleep_time_series_from_fitbit:
             if "data" not in item["levels"]:
@@ -367,8 +370,9 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit step intraday data was updated.'.format(self.user.username)
         except Exception as e:
-            user_step_intraday_data_from_fitbit = e.args[-1]
-            action = 'User {} Fitbit step intraday data was partially updated till {}.'.format(self.user.username, user_step_intraday_data_from_fitbit[-2]["activities-steps"][0]['dateTime'])
+            if self.__partial_entries is not None:
+                user_step_intraday_data_from_fitbit = self.__partial_entries
+                action = 'User {} Fitbit step intraday data was partially updated till {}.'.format(self.user.username, user_step_intraday_data_from_fitbit[-1]["activities-steps"][0]['dateTime'])
             error = e
         for item in user_step_intraday_data_from_fitbit:
             activities_steps = item["activities-steps"][0]
@@ -397,7 +401,7 @@ class FitbitRetriever:
             raise error
 
     def save_heartrate_intraday_data(self, start_date: date=None, end_date: date=None):
-        model = UserHeartRateIntradayData
+        model = UserHeartrateIntradayData
         error = None
         try:
             user_heartrate_intraday_data_from_fitbit = self.__retrieve_latest_date(
@@ -410,14 +414,15 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit heartrate intraday data was updated.'.format(self.user.username)
         except Exception as e:
-            user_heartrate_intraday_data_from_fitbit = e.args[-1]
-            action = 'User {} Fitbit heartrate intraday data was partially updated till {}.'.format(self.user.username, user_heartrate_intraday_data_from_fitbit[-2]["activities-heart"][0]['dateTime'])
+            if self.__partial_entries is not None:
+                user_heartrate_intraday_data_from_fitbit = self.__partial_entries
+                action = 'User {} Fitbit heartrate intraday data was partially updated till {}.'.format(self.user.username, user_heartrate_intraday_data_from_fitbit[-1]["activities-heart"][0]['dateTime'])
             error = e
         for item in user_heartrate_intraday_data_from_fitbit:
             activities_heart = item["activities-heart"][0]
             activities_heart_intraday = item["activities-heart-intraday"]
             date_time = date.fromisoformat(activities_heart['dateTime'])
-            correspoding_time_series = UserHeartRateTimeSeries.objects.get(
+            correspoding_time_series = UserHeartrateTimeSeries.objects.get(
                 user_profile=self.user_profile,
                 date_time=date_time
             )
@@ -445,7 +450,7 @@ class FitbitRetriever:
             if existing_entries.count() == 0:
                 start_date = date.fromisoformat(self.user_profile_json["memberSince"])
             else:
-                if model == UserStepIntradayData or model == UserHeartRateIntradayData:
+                if model == UserStepIntradayData or model == UserHeartrateIntradayData:
                     start_date = existing_entries.last().time_series.date_time
                 else: 
                     start_date = existing_entries.last().date_time
@@ -472,11 +477,7 @@ class FitbitRetriever:
                 try:
                     new_entries_from_fitbit = endpoint(**endpoint_args)
                 except Exception as e:
-                    new_args = []
-                    for item in e.args:
-                        new_args.append(item)
-                    new_args.append(items)
-                    e.args = tuple(new_args)
+                    self.__partial_entries = self.__append_items(items, new_entries_from_fitbit)
                     raise e
                 else:
                     items = self.__append_items(items, new_entries_from_fitbit)
@@ -508,11 +509,11 @@ class FitbitRetriever:
     
     def __get_heartrate_time_series(self, date_time: date):
         try:
-            return UserHeartRateTimeSeries.objects.get(
+            return UserHeartrateTimeSeries.objects.get(
                 user_profile=self.user_profile,
                 date_time=date_time
             )
-        except UserHeartRateTimeSeries.DoesNotExist:
+        except UserHeartrateTimeSeries.DoesNotExist:
             return None
 
     def __get_sleep_time_series(self, date_time: date):
@@ -535,9 +536,9 @@ class FitbitRetriever:
 
     def __get_heartrate_intraday_data(self, date_time: date):
         try:
-            return UserHeartRateIntradayData.objects.get(
+            return UserHeartrateIntradayData.objects.get(
                 user_profile=self.user_profile,
                 time_series=self.__get_heartrate_time_series(date_time=date_time)
             )
-        except UserHeartRateIntradayData.DoesNotExist:
+        except UserHeartrateIntradayData.DoesNotExist:
             return None
