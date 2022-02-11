@@ -8,6 +8,7 @@ djangorestframework = "*"
 django = "*"
 djangorestframework-simplejwt = "*"
 requests-oauthlib = "*"
+django-crontab = "*"
 
 [dev-packages]
 
