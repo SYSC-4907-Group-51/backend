@@ -149,5 +149,5 @@ UTILS_CONSTANTS = {
 }
 
 CRONJOBS = [
-    ('0 */6 * * *', 'api.cronjob.retrieve_all_user_data') # Every 6 hours
+    ('0 */6 * * *', 'api.cronjob.retrieve_all_user_data', '>> /tmp/api_cron.log') # Every 6 hours
 ]

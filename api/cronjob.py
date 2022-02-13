@@ -10,4 +10,5 @@ def retrieve_all_user_data():
             continue
         action = 'The tracker data for User {} is automatically updating.'.format(user_profile.user.username)
         Logger(user=user_profile.user, action=action).info()
+        print(action + 'at {}'.format(datetime.today()))
         FitbitRetriever(user_profile=user_profile).retrieve_all()

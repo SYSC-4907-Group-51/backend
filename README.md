@@ -25,7 +25,7 @@ Email: admin@example.com
 
 Change `CSRF_TRUSTED_ORIGINS` in `api/env/production.py` to access `/admin`
 
-Note: To enable automatically retrieve data, the system must be **Linux** and have **cron** enabled
+Note: To enable automatically retrieve data, the system must be **Linux** and have **crond/crontab/cron** enabled
 
 ### After Initialization
 
@@ -37,31 +37,27 @@ $ python manage.py runserver 0.0.0.0:8000
 
 #### docker-compose
 
+**NO INITIALIZATION NEEDED**
+
 ```yaml
 version: "3.8"
 services:
     backend:
-        build: ./backend
+        build: ./
         container_name: backend_container
-        hostname: Halyul-Server-Docker
         volumes:
             - ./:/app
         environment:
             ENV: production
-        ports:
-            - 8000:8000
+            ADMIN_EMAIL: admin@example.com
+            ADMIN_PASSWORD: pddyrfFkYW0nAb1BKJ1LVb5Ftov1xo8O/KCjgva2cCPqzcmBnaK5lXwd8pNbhMBe
+            ADMIN_USERNAME: admin
+            ADMIN_FIRST_NAME: admin
+            ADMIN_LAST_NAME: admin
         restart: always
         logging:
             driver: "json-file"
             options:
                 max-size: "1g"
                 max-file: "1"
-```
-
-##### Note
-
-Superuser will not be created in `docker` container. Run following command in the container:
-
-```bash
-$ python manage.py createsuperuser --email admin@example.com --username admin
 ```
