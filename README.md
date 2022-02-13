@@ -12,7 +12,7 @@ $ python manage.py makemigrations tracker
 $ python manage.py makemigrations user
 $ python manage.py makemigrations visualize
 $ python manage.py migrate
-$ python manage.py createsuperuser --email admin@example.com --username admin
+$ python manage.py createsuperuser
 $ python manage.py crontab add
 ```
 
@@ -49,11 +49,6 @@ services:
             - ./:/app
         environment:
             ENV: production
-            ADMIN_EMAIL: admin@example.com
-            ADMIN_PASSWORD: pddyrfFkYW0nAb1BKJ1LVb5Ftov1xo8O/KCjgva2cCPqzcmBnaK5lXwd8pNbhMBe
-            ADMIN_USERNAME: admin
-            ADMIN_FIRST_NAME: admin
-            ADMIN_LAST_NAME: admin
         restart: always
         logging:
             driver: "json-file"
@@ -61,3 +56,5 @@ services:
                 max-size: "1g"
                 max-file: "1"
 ```
+
+**Superuser can only be created inside the docker container**
