@@ -58,3 +58,38 @@ services:
 ```
 
 **Superuser can only be created inside the docker container**
+
+### Web Server Configuration
+
+For Caddy V2
+
+```conf
+cap-api.gura.ch {
+    
+    # CORS
+    header Access-Control-Allow-Origin *
+    header Access-Control-Allow-Headers *
+	header Access-Control-Allow-Methods *
+
+    # Admin panel static files
+    root * /www/backend/
+    file_server
+    @css {
+        path_regexp .css
+    }
+    @js {
+        path_regexp .js
+    }
+    header @css Content-Type text/css
+    header @js Content-Type application/javascript
+
+    # API proxy
+    @notStatic {
+        not path /static/*
+    }
+    reverse_proxy @notStatic http://backend:8000 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Host {host}
+    }
+}
+```
