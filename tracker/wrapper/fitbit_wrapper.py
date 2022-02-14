@@ -204,6 +204,8 @@ class FitbitRetriever:
             Logger(user=self.user, action=action).warn()
             self.user_profile.update_is_authorized(False)
             self.is_authorized = False
+        except Exception as e:
+            raise e
         else:
             action = 'User {} Fitbit profile was updated.'.format(self.user.username)
             Logger(user=self.user, action=action).info()
@@ -249,9 +251,10 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit step time series was updated.'.format(self.user.username)
         except Exception as e:
-            if self.__partial_entries is not None:
-                user_step_time_series_from_fitbit = self.__partial_entries
-                action = 'User {} Fitbit step time series was partially updated till {}.'.format(self.user.username, user_step_time_series_from_fitbit[-1]['dateTime'])
+            if self.__partial_entries is None:
+                raise e
+            user_step_time_series_from_fitbit = self.__partial_entries
+            action = 'User {} Fitbit step time series was partially updated till {}.'.format(self.user.username, user_step_time_series_from_fitbit[-1]['dateTime'])
             error = e
         for item in user_step_time_series_from_fitbit:
             try:
@@ -282,9 +285,10 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit heartrate time series was updated.'.format(self.user.username)
         except Exception as e:
-            if self.__partial_entries is not None:
-                user_heartrate_time_series_from_fitbit = self.__partial_entries
-                action = 'User {} Fitbit heartrate time series was partially updated till {}.'.format(self.user.username, user_heartrate_time_series_from_fitbit[-1]['dateTime'])
+            if self.__partial_entries is None:
+                raise e
+            user_heartrate_time_series_from_fitbit = self.__partial_entries
+            action = 'User {} Fitbit heartrate time series was partially updated till {}.'.format(self.user.username, user_heartrate_time_series_from_fitbit[-1]['dateTime'])
             error = e
         for item in user_heartrate_time_series_from_fitbit:
             if "restingHeartRate" not in item["value"]:
@@ -319,9 +323,10 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit sleep time series was updated.'.format(self.user.username)
         except Exception as e:
-            if self.__partial_entries is not None:
-                user_sleep_time_series_from_fitbit = self.__partial_entries
-                action = 'User {} Fitbit sleep time series was partially updated till {}.'.format(self.user.username, user_sleep_time_series_from_fitbit[-1]['dateTime'])
+            if self.__partial_entries is None:
+                raise e
+            user_sleep_time_series_from_fitbit = self.__partial_entries
+            action = 'User {} Fitbit sleep time series was partially updated till {}.'.format(self.user.username, user_sleep_time_series_from_fitbit[-1]['dateTime'])
             error = e
         for item in user_sleep_time_series_from_fitbit:
             if "data" not in item["levels"]:
@@ -376,9 +381,10 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit step intraday data was updated.'.format(self.user.username)
         except Exception as e:
-            if self.__partial_entries is not None:
-                user_step_intraday_data_from_fitbit = self.__partial_entries
-                action = 'User {} Fitbit step intraday data was partially updated till {}.'.format(self.user.username, user_step_intraday_data_from_fitbit[-1]["activities-steps"][0]['dateTime'])
+            if self.__partial_entries is None:
+                raise e
+            user_step_intraday_data_from_fitbit = self.__partial_entries
+            action = 'User {} Fitbit step intraday data was partially updated till {}.'.format(self.user.username, user_step_intraday_data_from_fitbit[-1]["activities-steps"][0]['dateTime'])
             error = e
         for item in user_step_intraday_data_from_fitbit:
             activities_steps = item["activities-steps"][0]
@@ -420,9 +426,10 @@ class FitbitRetriever:
             )
             action = 'User {} Fitbit heartrate intraday data was updated.'.format(self.user.username)
         except Exception as e:
-            if self.__partial_entries is not None:
-                user_heartrate_intraday_data_from_fitbit = self.__partial_entries
-                action = 'User {} Fitbit heartrate intraday data was partially updated till {}.'.format(self.user.username, user_heartrate_intraday_data_from_fitbit[-1]["activities-heart"][0]['dateTime'])
+            if self.__partial_entries is None:
+                raise e
+            user_heartrate_intraday_data_from_fitbit = self.__partial_entries
+            action = 'User {} Fitbit heartrate intraday data was partially updated till {}.'.format(self.user.username, user_heartrate_intraday_data_from_fitbit[-1]["activities-heart"][0]['dateTime'])
             error = e
         for item in user_heartrate_intraday_data_from_fitbit:
             activities_heart = item["activities-heart"][0]
@@ -474,8 +481,12 @@ class FitbitRetriever:
         Logger(user=self.user, action=action).info()
         if len(time_intervals) == 0:
             # refresh start date to today, will always less than 30 days
-            new_entries_from_fitbit = endpoint(**endpoint_args)
-            items = self.__append_items(items, new_entries_from_fitbit)
+            try:
+                new_entries_from_fitbit = endpoint(**endpoint_args)
+            except Exception as e:
+                raise e
+            else:
+                items = self.__append_items(items, new_entries_from_fitbit)
         else:
             for i in range(0, len(time_intervals) - 1):
                 endpoint_args["start_date"] = time_intervals[i]

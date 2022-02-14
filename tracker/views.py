@@ -52,6 +52,12 @@ class TrackerAuthorizeView(APIView):
                 headers={"Location": "{}/invaliderror".format(settings.UTILS_CONSTANTS["DOMAIN"])},
                 status=status.HTTP_302_FOUND
             )
+        except Exception as e:
+            print(e)
+            return Response(
+                headers={"Location": "{}/addtracker".format(settings.UTILS_CONSTANTS["DOMAIN"])},
+                status=status.HTTP_302_FOUND
+            )
         else:
             query_dict = get_user_with_state_id(state_id)
             if 'error' in query_dict:
