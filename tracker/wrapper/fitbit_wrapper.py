@@ -136,8 +136,14 @@ class FitbitRetriever:
                     args=(None, None, True),
                     daemon=True,
                 ),
-                sleep_time=e.retry_after_secs + 600,
+                sleep_time=e.retry_after_secs + 60,
             )
+        except Exception as e:
+            # handle other exceptions
+            print(e)
+            action = 'Fail to retrieve User {} data due to {}. A manual refresh is needed.'.format(self.user.username, e)
+            Logger(user=self.user, action=action).warn()
+            self.user_profile.update_retrieving_status(False)
         finally:
             self.calculate_sync_status()
 
