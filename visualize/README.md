@@ -41,7 +41,8 @@ Status Code: `201 CREATED`
     false, // sleep_time_series
     false, // step_intraday_data
     false // heartrate_intraday_data
- ]
+ ],
+  "created_at": "2022-02-04T19:53:56.020945Z"
 }
 ```
 #### Fail
@@ -181,7 +182,7 @@ Status Code: `200 OK`
       "2021-10-11",
       ...
     ],
-    "step_intraday_data": [],
+    "step_intraday_data": [], // empty here
     "heartrate_intraday_data": [
       "2021-10-09",
       "2021-10-10",
@@ -262,8 +263,8 @@ Status Code: `200 OK`
 
 ```json
 {
-  "date": "2022-01-01",
   "time_series": {
+    "date": "2022-01-01",
     "resting_heartrate": 79,
     "heartrate_zones": [
       {
@@ -283,7 +284,7 @@ Status Code: `200 OK`
       ...
     ]
   },
-  "data": [
+  "dataset": [
     {
       "time": "00:00:00",
       "value": 93
@@ -440,7 +441,7 @@ No such user                                                                    
 No data available                                                                | 400 BAD REQUEST  | `{"detail": "No data available"}`
 No data available for requested `type` between `start_date` and `end_date` range | 400 BAD REQUEST  | `{"detail": "No data in between <start_date> and <end_date>"}`
 No permission for requested `type`                                               | 403 FORBIDDEN    | `{"detail": "No permission"}`
-No such `type`                                   | 403_FORBIDDEN    | `{"detail": "Invalid type", 'types': ["step", "heartrate", "sleep"]}`
+No such `type`                                                                   | 403_FORBIDDEN    | `{"detail": "Invalid type", 'types': ["step", "heartrate", "sleep"]}`
 
 ## /refresh-authorization-key
 

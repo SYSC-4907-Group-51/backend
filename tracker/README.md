@@ -44,7 +44,7 @@ Response will use `Location` in header to redirect the user to the landing page 
 
 #### Succeed
 Status Code: `302 FOUND`
-Location: `TODO`
+Location: `/share`
 `N/A`
 
 #### Fail

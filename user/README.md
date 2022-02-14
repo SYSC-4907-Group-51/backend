@@ -268,7 +268,9 @@ Status Code: `200 OK`
     "username": "test", // username
     "first_name": "test", // user profile first name
     "last_name": "test", // user profile last name
-    "email": "test@exmaple.com" // user email
+    "email": "test@exmaple.com", // user email
+    "created_at": "2022-02-13T18:27:16.380710-05:00", // the time the user registered
+    "updated_at": "2022-02-13T18:54:34.661706-05:00" // the time the user updated their profile
 }
 ```
 
