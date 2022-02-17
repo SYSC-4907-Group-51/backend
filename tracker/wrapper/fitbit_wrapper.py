@@ -1,4 +1,4 @@
-from os import times_result
+import traceback
 from tracker.wrapper.fitbit import fitbit
 from tracker.wrapper.fitbit.fitbit.exceptions import *
 from tracker.models import *
@@ -140,8 +140,8 @@ class FitbitRetriever:
             )
         except Exception as e:
             # handle other exceptions
-            print(e)
-            action = 'Fail to retrieve User {} data due to {}. A manual refresh is needed.'.format(self.user.username, e)
+            print(traceback.format_exc())
+            action = 'Fail to retrieve User {} data due to unknown error. A manual refresh is needed.'.format(self.user.username)
             Logger(user=self.user, action=action).warn()
             self.user_profile.update_retrieving_status(False)
         finally:
@@ -494,7 +494,7 @@ class FitbitRetriever:
                 try:
                     new_entries_from_fitbit = endpoint(**endpoint_args)
                 except Exception as e:
-                    self.__partial_entries = self.__append_items(items, new_entries_from_fitbit)
+                    self.__partial_entries = items
                     raise e
                 else:
                     items = self.__append_items(items, new_entries_from_fitbit)
