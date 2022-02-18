@@ -126,6 +126,7 @@ class FitbitRetriever:
                 self.save_sleep_time_series(start_date=start_date, end_date=end_date)
                 self.save_step_intraday_data(start_date=start_date, end_date=end_date)
                 self.save_heartrate_intraday_data(start_date=start_date, end_date=end_date)
+                self.calculate_sync_status()
             self.user_profile.update_retrieving_status(False)
         except HTTPTooManyRequests as e:
             action = 'Fail to retrieve User {} data because {}, retry after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs)
@@ -138,14 +139,14 @@ class FitbitRetriever:
                 ),
                 sleep_time=e.retry_after_secs + 60,
             )
+            self.calculate_sync_status()
         except Exception as e:
             # handle other exceptions
             print(traceback.format_exc())
             action = 'Fail to retrieve User {} data due to unknown error. A manual refresh is needed.'.format(self.user.username)
             Logger(user=self.user, action=action).warn()
-            self.user_profile.update_retrieving_status(False)
-        finally:
             self.calculate_sync_status()
+            self.user_profile.update_retrieving_status(False)
 
     def token_updater(self, token_dict):
         self.access_token = token_dict['access_token']
@@ -169,7 +170,7 @@ class FitbitRetriever:
         for time in time_intervals:
             date_time = date.fromisoformat(time)
             try:
-                entry = UserSyncStatus.objects.get(user_profile=self.user_profile, date_time=date_time)
+                entry = UserSyncStatus.objects.get(user_profile=self.user_profile, date_time_uuid=time)
             except UserSyncStatus.DoesNotExist:
                 UserSyncStatus.objects.create(
                     user_profile=self.user_profile,
