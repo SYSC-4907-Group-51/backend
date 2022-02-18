@@ -494,7 +494,8 @@ class FitbitRetriever:
                 try:
                     new_entries_from_fitbit = endpoint(**endpoint_args)
                 except Exception as e:
-                    self.__partial_entries = items
+                    if len(items) != 0:
+                        self.__partial_entries = items
                     raise e
                 else:
                     items = self.__append_items(items, new_entries_from_fitbit)
