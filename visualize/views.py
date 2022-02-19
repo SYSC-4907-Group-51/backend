@@ -185,19 +185,19 @@ class VisualizeEntranceView(APIView):
 
                     for user_sync_status_obj in user_sync_status_objs:
                         if key_permissions_[0] is True and user_sync_status_obj.get_step_time_series_status() is True:
-                            available_dates['step_time_series'].append(user_sync_status_obj.date_time_uuid)
+                            available_dates['step_time_series'].append(user_sync_status_obj.date_time.strftime("%Y-%m-%d"))
                         
                         if key_permissions_[1] is True and user_sync_status_obj.get_heartrate_time_series_status() is True:
-                            available_dates['heartrate_time_series'].append(user_sync_status_obj.date_time_uuid)
+                            available_dates['heartrate_time_series'].append(user_sync_status_obj.date_time.strftime("%Y-%m-%d"))
                         
                         if key_permissions_[2] is True and user_sync_status_obj.get_sleep_time_series_status() is True:
-                            available_dates['sleep_time_series'].append(user_sync_status_obj.date_time_uuid)
+                            available_dates['sleep_time_series'].append(user_sync_status_obj.date_time.strftime("%Y-%m-%d"))
                         
                         if key_permissions_[3] is True and user_sync_status_obj.get_step_intraday_data_status() is True:
-                            available_dates['step_intraday_data'].append(user_sync_status_obj.date_time_uuid)
+                            available_dates['step_intraday_data'].append(user_sync_status_obj.date_time.strftime("%Y-%m-%d"))
                         
                         if key_permissions_[4] is True and user_sync_status_obj.get_heartrate_intraday_data_status() is True:
-                            available_dates['heartrate_intraday_data'].append(user_sync_status_obj.date_time_uuid)
+                            available_dates['heartrate_intraday_data'].append(user_sync_status_obj.date_time.strftime("%Y-%m-%d"))
 
                     authorization_key = generate_authorization_key(username=user.username, permissions=key_permissions_)
                     key.delete()
@@ -356,7 +356,7 @@ class VisualizeTimeSeriesView(APIView):
                     data_end_date = request.query_params.get('end_date')
                 else:
                     # without end date
-                    data_end_date = user_sync_status_entries.last().date_time_uuid
+                    data_end_date = user_sync_status_entries.last().date_time.strftime("%Y-%m-%d")
                 try:
                     end_date = date.fromisoformat(data_end_date)
                 except:

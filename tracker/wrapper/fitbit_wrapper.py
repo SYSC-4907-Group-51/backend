@@ -1,4 +1,5 @@
 import traceback
+import hashlib
 from tracker.wrapper.fitbit import fitbit
 from tracker.wrapper.fitbit.fitbit.exceptions import *
 from tracker.models import *
@@ -128,7 +129,7 @@ class FitbitRetriever:
                 self.save_heartrate_intraday_data(start_date=start_date, end_date=end_date)
             self.user_profile.update_retrieving_status(False)
         except HTTPTooManyRequests as e:
-            action = 'Fail to retrieve User {} data because {}, retry after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs)
+            action = 'Fail to retrieve User {} data because {}, retry after {} sec.'.format(self.user.username, "API quota exceeded", e.retry_after_secs + 60)
             Logger(user=self.user, action=action).warn()
             sleep_then_run_task(
                 task=dict(
@@ -168,12 +169,13 @@ class FitbitRetriever:
         time_intervals = self.__calculate_time_intervals(start_date, end_date, 1)
         for time in time_intervals:
             date_time = date.fromisoformat(time)
+            uuid = self.__generate_uuid(time)
             try:
-                entry = UserSyncStatus.objects.get(user_profile=self.user_profile, date_time=date_time)
+                entry = UserSyncStatus.objects.get(user_profile=self.user_profile, uuid=uuid)
             except UserSyncStatus.DoesNotExist:
                 UserSyncStatus.objects.create(
                     user_profile=self.user_profile,
-                    date_time_uuid=time,
+                    uuid=uuid,
                     date_time=date_time,
                     step_time_series=self.__get_step_time_series(date_time),
                     heartrate_time_series=self.__get_heartrate_time_series(date_time),
@@ -257,13 +259,14 @@ class FitbitRetriever:
             action = 'User {} Fitbit step time series was partially updated till {}.'.format(self.user.username, user_step_time_series_from_fitbit[-1]['dateTime'])
             error = e
         for item in user_step_time_series_from_fitbit:
+            uuid = self.__generate_uuid(item['dateTime'])
             try:
-                last_entry = model.objects.get(date_time_uuid=item['dateTime'])
+                last_entry = model.objects.get(uuid=uuid, user_profile=self.user_profile)
                 last_entry.update_steps(item["value"])
             except model.DoesNotExist:
                 model.objects.create(
                     user_profile=self.user_profile,
-                    date_time_uuid=item['dateTime'],
+                    uuid=uuid,
                     date_time=date.fromisoformat(item['dateTime']),
                     steps=item["value"]
                 )
@@ -293,14 +296,15 @@ class FitbitRetriever:
         for item in user_heartrate_time_series_from_fitbit:
             if "restingHeartRate" not in item["value"]:
                 item["value"]["restingHeartRate"] = 0
+            uuid = self.__generate_uuid(item['dateTime'])
             try:
-                last_entry = model.objects.get(date_time_uuid=item['dateTime'])
+                last_entry = model.objects.get(uuid=uuid, user_profile=self.user_profile)
                 last_entry.update_resting_heartrate(item["value"]["restingHeartRate"])
                 last_entry.update_heartrate_zones(item["value"]["heartRateZones"])
             except model.DoesNotExist:
                 model.objects.update_or_create(
                     user_profile=self.user_profile,
-                    date_time_uuid=item['dateTime'],
+                    uuid=uuid,
                     date_time=date.fromisoformat(item['dateTime']),
                     resting_heartrate=item["value"]["restingHeartRate"],
                     heartrate_zones=item["value"]["heartRateZones"]
@@ -333,8 +337,9 @@ class FitbitRetriever:
                 item["levels"]["data"] = {}
             if "summary" not in item["levels"]:
                 item["levels"]["summary"] = {}
+            uuid = self.__generate_uuid(item['dateOfSleep'])
             try:
-                last_entry = model.objects.get(date_time_uuid=item['dateOfSleep'])
+                last_entry = model.objects.get(uuid=uuid, user_profile=self.user_profile)
                 last_entry.update_duration(item["duration"])
                 last_entry.update_efficiency(item["efficiency"])
                 last_entry.update_start_time(item['startTime'])
@@ -349,7 +354,7 @@ class FitbitRetriever:
             except model.DoesNotExist:
                 model.objects.update_or_create(
                     user_profile=self.user_profile,
-                    date_time_uuid=item['dateOfSleep'],
+                    uuid=uuid,
                     date_time= date.fromisoformat(item['dateOfSleep']),
                     duration = item["duration"],
                     efficiency = item["efficiency"],
@@ -560,3 +565,15 @@ class FitbitRetriever:
             )
         except UserHeartrateIntradayData.DoesNotExist:
             return None
+
+    def __generate_uuid(self, time):
+        """
+            Generate a unique id for the given time.
+
+            Args:
+                time: string, the time to generate the id for in %Y-%m-%d.
+
+            Returns:
+                string, the unique id.
+        """
+        return hashlib.md5("{}-{}".format(self.user.username, time).encode()).hexdigest()
