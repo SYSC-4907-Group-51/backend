@@ -6,6 +6,17 @@ class KeySerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField(method_name='get_permissions')
 
     def get_permissions(self, obj):
+        """
+            Get the key permission array
+
+            Return:
+                list: permission array
+                        0 -> step time series
+                        1 -> heartrate time series
+                        2 -> sleep time series
+                        3 -> step intraday data
+                        4 -> heartrate intraday data
+        """
         return [
             obj.allow_step_time_series,
             obj.allow_heartrate_time_series,
@@ -29,6 +40,16 @@ class KeySerializer(serializers.ModelSerializer):
 class KeyDeleteSerializer(serializers.Serializer):
 
     def delete(self, instance, validated_data):
+        """
+            Delete the key when it is used to visualized the data
+
+            Args:
+                instance: dict, current User model
+                validated_date: dict, user requested data
+
+            Return:
+                Key: the deleted Key Object
+        """
         key = Key.objects.filter(user=instance, **validated_data)
         if not key:
             raise serializers.ValidationError({'detail': 'Invalid key'})

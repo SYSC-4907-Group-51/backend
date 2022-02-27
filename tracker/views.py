@@ -18,6 +18,16 @@ class TrackerAuthorizeView(APIView):
     fitbit_obj = FitbitWrapper(None)
 
     def post(self, request):
+        """
+            Generate an authorization URL for Fitbit account
+            See: README.md -> /auth@Method:POST
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         url, state_id = self.fitbit_obj.get_authorization_url()
 
         action = 'User {} tried to authorize Fitbit account with state id: {}'.format(request.user.username, state_id)
@@ -32,10 +42,21 @@ class TrackerAuthorizeView(APIView):
         )
 
     def get(self, request):
+        """
+            Store the authorization code from user Fitbit account
+            User should only be redirected to this URL from Fitbit
+
+            See: README.md -> /auth@Method:GET
+
+            Args:
+                request: user request data
+
+            Return:
+                None: Header redirect `302`
+        """
         state_id = request.query_params.get('state')
         code = request.query_params.get('code')
         if not state_id or not code:
-            #TODO: update redirect url
             return Response(
                 headers={"Location": "{}/invaliderror".format(settings.UTILS_CONSTANTS["DOMAIN"])},
                 status=status.HTTP_302_FOUND
@@ -94,6 +115,17 @@ class TrackerAuthorizeView(APIView):
 
 class TrackerRefreshView(APIView):
     def put(self, request):
+        """
+            User requests to refresh latest tracker data
+
+            See: README.md -> /refresh
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         date_time = None
         action = 'User {} initialized a refresh request'.format(request.user.username)
         if request.data.get('date') is not None:
@@ -132,6 +164,17 @@ class TrackerRefreshView(APIView):
 
 class TrackerDeleteView(APIView):
     def delete(self, request):
+        """
+            User requests to delete the authorization
+
+            See: README.md -> /delete
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         user_created_keys = Key.objects.filter(user=request.user, is_available=True)
         if user_created_keys.count() > 0:
             return Response(

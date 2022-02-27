@@ -19,6 +19,17 @@ class Key(models.Model):
         ordering = ['-created_at']
 
     def get_permissions(self):
+        """
+            Get the key permission array
+
+            Return:
+                list: permission array
+                        0 -> step time series
+                        1 -> heartrate time series
+                        2 -> sleep time series
+                        3 -> step intraday data
+                        4 -> heartrate intraday data
+        """
         return [
             self.allow_step_time_series,
             self.allow_heartrate_time_series,

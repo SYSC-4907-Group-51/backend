@@ -1,7 +1,7 @@
 # API Endpoint /tracker
 
 ## /auth
-
+Generate an authorization URL for Fitbit account
 ### Method
 `POST`
 
@@ -29,6 +29,8 @@ Case         | Status Code      | Body
 Unauthorized | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 
 ## /auth
+Store the authorization code from user Fitbit account. User should only be redirected to this URL from Fitbit. 
+
 It is used to redirect the user back to the front-end by Fitbit, user will not be able to access this url by get
 ### Method
 `GET`
@@ -56,7 +58,7 @@ User did not select all scopes on Fitbit | 302 FOUND   | `/mismatcherror`
 `state` is not valid                     | 302 FOUND   | `/invaliderror`
 
 ## /refresh
-Refresh all tracker data
+User requests to refresh latest tracker data
 ### Method
 `PUT`
 
@@ -96,7 +98,7 @@ A retrieving task is already queued            | 403 FORBIDDEN | `{"detail": "A 
 
 
 ## /delete
-Delete authorization
+User requests to delete the authorization
 ### Method
 `DELETE`
 

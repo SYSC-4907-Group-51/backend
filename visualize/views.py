@@ -24,6 +24,16 @@ KEY_PERMISSIONS = [
 
 class KeyCreateView(APIView):
     def post(self, request):
+        """
+            Patient Generate Key API
+            See: README.md -> /create-key
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         if len(request.data.get('permissions', [])) != 5:
             return Response(
                 {
@@ -116,6 +126,16 @@ class KeyCreateView(APIView):
 
 class KeyShowView(APIView):
     def get(self, request):
+        """
+            Patient Get Available Keys API
+            See: README.md -> /show-keys
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         key_objs = Key.objects.filter(user=request.user)
         serializer = KeySerializer(key_objs, many=True)
         return Response(
@@ -125,6 +145,16 @@ class KeyShowView(APIView):
 
 class KeyDeleteView(APIView):
     def delete(self, request):
+        """
+            Patient Delete A Key API
+            See: README.md -> /delete-key
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         serializer = KeyDeleteSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.delete(request.user, request.data)
@@ -142,6 +172,16 @@ class KeyDeleteView(APIView):
 class VisualizeEntranceView(APIView):
     permission_classes = [permissions.AllowAny]
     def get(self, request):
+        """
+            Healthcare Provider Enter Key API
+            See: README.md -> /view
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         if request.query_params.get('username') and request.query_params.get('key'):
             try:
                 user = User.objects.get(username=request.query_params.get('username'))
@@ -221,6 +261,16 @@ class VisualizeEntranceView(APIView):
 class VisualizeIntradayView(APIView):
     permission_classes = [VisualizePermission]
     def get(self, request):
+        """
+            Healthcare Provider Get Intraday Data API
+            See: README.md -> /intraday
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         if request.query_params.get('type') and request.query_params.get('date'):
             data_type = request.query_params.get('type')
             data_date = request.query_params.get('date')
@@ -305,6 +355,16 @@ class VisualizeIntradayView(APIView):
 class VisualizeTimeSeriesView(APIView):
     permission_classes = [VisualizePermission]
     def get(self, request):
+        """
+            Healthcare Provider Get Time Series Data API
+            See: README.md -> /time-series
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         if request.query_params.get('type') and request.query_params.get('start_date'):
             
             data_type = request.query_params.get('type')
@@ -455,7 +515,16 @@ class VisualizeTimeSeriesView(APIView):
 class VisualizeAuthorizationKeyRefreshView(APIView):
     permission_classes = [VisualizePermission]
     def put(self, request):
+        """
+            Healthcare Provider Get New Access Token API
+            See: README.md -> /refresh-authorization-key
 
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         authorization_key = refresh_authorization_key(authorization_key=request.headers.get('X-Authorization'))
         
         return Response(

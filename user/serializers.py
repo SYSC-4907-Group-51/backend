@@ -5,6 +5,15 @@ from .utils import password_validator
 class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
+        """
+            Override the `create` method of the ModelSerializer
+
+            Args:
+                validated_data: dict, data passed to the serializer
+
+            Return:
+                User: the user object
+        """
         errors = password_validator(User(**validated_data), validated_data.get('password'))
         if errors:
             raise serializers.ValidationError(errors)
@@ -24,6 +33,17 @@ class UserSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
+        """
+            Update the user object
+
+            Args:
+                instance: User, current user object
+                validated_data: dict, the data passed to the serializer to 
+                                update
+            
+            Return:
+                User: current user object
+        """
         errors = dict()
         instance.username = validated_data.get('username', instance.username)
         instance.first_name = validated_data.get('first_name', instance.first_name)
@@ -40,6 +60,17 @@ class UserUpdateSerializer(serializers.Serializer):
 class UserDeleteSerializer(serializers.Serializer):
 
     def delete(self, instance, validated_data):
+        """
+            Delete current User object, password must be checked            
+            
+            Args:
+                instance: User, current user object
+                validated_data: dict, the data passed to the serializer to      
+                                check the password
+
+            Return:
+                User: deleted user object
+        """
         if not instance.check_password(validated_data.get('password', None)):
             raise serializers.ValidationError({'detail': 'Password does not match'})
         instance.delete()

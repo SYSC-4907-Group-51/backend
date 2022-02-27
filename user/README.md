@@ -1,7 +1,7 @@
 # API Endpoint /user
 
 ## /register
-
+Patient registers their account in the system.
 ### Method
 `POST`
 
@@ -42,7 +42,7 @@ Invalid username/passowrd/email | 400 BAD REQUEST  | `{<reasons>}`
 
 
 ## /login
-
+Patient logs in their account.
 ### Method
 `POST`
 
@@ -81,7 +81,7 @@ Invalid username/passowrd | 400 BAD REQUEST  | `{"detail": "Invalid username/pas
 No such user              | 400 BAD REQUEST  | `{"detail": "No such user"}`
 
 ## /logout
-
+Patient logs out their account, which blacklists the refresh token. If they do not logout using this API, the refresh token is still valid
 ### Method
 `POST`
 
@@ -110,7 +110,7 @@ Unauthorized     | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any
 Failed to logout | 400 BAD REQUEST  | `{"detail": "Unable to logout"}`
 
 ## /status
-
+This API provides patient account info like their username, auhorization status, etc.
 ### Method
 `GET`
 
@@ -156,7 +156,7 @@ Case         | Status Code      | Body
 Unauthorized | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 
 ## /sync-status
-
+This API provides the synchronization status of the patient's tracker data.
 ### Method
 `GET`
 
@@ -236,7 +236,7 @@ Invalid `date` format                       | 400 BAD REQUEST  | `{"detail": "In
 User has not connected their Fitbit account | 400 BAD REQUEST  | `{"detail": "User has not yet authorized"}`
 
 ## /update
-
+The patient can request to update their account information like username, password, etc.
 ### Method
 `PUT`
 
@@ -281,9 +281,8 @@ Case                            | Status Code      | Body
 Unauthorized                    | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 Invalid username/passowrd/email | 400 BAD REQUEST  | `{<reasons>}`
 
-
 ## /delete
-
+This API allows patients to delete their account.
 ### Method
 `DELETE`
 
@@ -316,7 +315,7 @@ Unauthorized            | 401 UNAUTHORIZED | `{"detail": "Given token not valid 
 Password does not match | 400 BAD REQUEST  | `{"detail": "Password does not match"}`
 
 ## /logs
-
+This API provides logs for the patient account since their registration.
 ### Method
 `GET`
 

@@ -12,6 +12,16 @@ from datetime import date
 class UserRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     def post(self, request):
+        """
+            Patient Registeration API
+            See: README.md -> /register
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -24,6 +34,16 @@ class UserRegisterView(APIView):
 class UserLoginView(APIView):
     permission_classes = [permissions.AllowAny]
     def post(self, request):
+        """
+            Patient Login API
+            See: README.md -> /login
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
@@ -49,10 +69,19 @@ class UserLoginView(APIView):
                 action = 'User {} failed to log in'.format(username)
                 Logger(user=user, action=action).warn()
                 return Response({'detail': 'Invalid username/password'}, status=status.HTTP_400_BAD_REQUEST)
-        
 
 class UserLogoutView(APIView):
     def post(self, request):
+        """
+            Patient Logout API
+            See: README.md -> /logout
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         request_user = request.user
         is_logout = logout_user(request.user)
         logout(request)
@@ -67,6 +96,16 @@ class UserLogoutView(APIView):
 
 class UserStatusView(APIView):
     def get(self, request):
+        """
+            Patient Status API
+            See: README.md -> /status
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         try:
             user_profile = UserProfile.objects.get(user=request.user)
         except:
@@ -100,6 +139,16 @@ class UserStatusView(APIView):
 
 class UserSyncStatusView(APIView):
     def get(self, request):
+        """
+            Patient Synchronization Status API
+            See: README.md -> /sync-status
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         date_time = None
         if request.query_params.get('date') is not None:
             try:
@@ -134,6 +183,16 @@ class UserSyncStatusView(APIView):
 
 class UserUpdateView(APIView):
     def put(self, request):
+        """
+            Patient Update Account API
+            See: README.md -> /update
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         serializer = UserUpdateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
@@ -152,6 +211,16 @@ class UserUpdateView(APIView):
 
 class UserDeleteView(APIView):
     def delete(self, request):
+        """
+            Patient Delete Account API
+            See: README.md -> /delete
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         serializer = UserDeleteSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
@@ -170,6 +239,16 @@ class UserDeleteView(APIView):
 
 class LogView(APIView):
     def get(self, request):
+        """
+            Patient Logs API
+            See: README.md -> /logs
+
+            Args:
+                request: user request data
+
+            Return:
+                dict: response
+        """
         logs = Log.objects.filter(user=request.user).order_by('-created_at')
         serializer = LogSerializer(logs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

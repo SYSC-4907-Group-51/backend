@@ -11,6 +11,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         ('Date information', {'fields': ('created_at', 'updated_at',)}),
     )
     readonly_fields = ('user', 'is_authorized', 'state_id', 'access_token', 'refresh_token', 'expires_at', 'scope', 'user_account_id', 'user_profile', 'created_at', 'updated_at',)
+    readonly_fields = ('created_at', 'updated_at',)
     search_fields = ('user', 'is_authorized')
     ordering = ('user', '-created_at',)
 

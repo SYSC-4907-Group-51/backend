@@ -1,7 +1,10 @@
 # API Endpoint /visualize
 
 ## /create-key
+The patient create a key to share with the healthcare provider using this API.
 
+- The length of the key is defined under `UTILS_CONSTANTS["KEY_LENGTH"]`
+- The maximum number of unused key is defined under `UTILS_CONSTANTS["RE_GENERATE_KEY_LIMIT"]`
 ### Method
 `POST`
 
@@ -59,7 +62,7 @@ User has reached maximum allowable key limit      | 403 FORBIDDEN    | `{"detail
 
 
 ## /show-keys
-
+This API provides all available keys under the Patient's account.
 ### Method
 `GET`
 
@@ -111,7 +114,7 @@ Case                                              | Status Code      | Body
 Unauthorized                                      | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 
 ## /delete-key
-
+A key can be deleted using this API.
 ### Method
 `DELETE`
 
@@ -138,7 +141,7 @@ Case             | Status Code      | Body
 Unauthorized     | 401 UNAUTHORIZED | `{"detail": "Given token not valid for any token type", ...}`
 
 ## /view
-
+This API provides an access token, permissions, and available dates for a given username and a valid key.
 ### Method
 `GET`
 
@@ -243,7 +246,7 @@ No such username                      | 400 BAD REQUEST  | `{"detail": "No such 
 No such key                           | 400 BAD REQUEST  | `{"detail": "No such key"}`
 
 ## /intraday
-
+This API provides intraday data for a specific date.
 ### Method
 `GET`
 
@@ -313,7 +316,7 @@ No permission or no data for requested `type`    | 403 FORBIDDEN    | `{"detail"
 No such `type`                                   | 403_FORBIDDEN    | `{"detail": "Invalid type", 'types': ["step", "heartrate"]}`
 
 ## /time-series
-
+This API provides time series data for a specific date or a date range.
 ### Method
 `GET`
 
@@ -325,7 +328,9 @@ Access token from the `/view` response
 ### Query
 `?type=<data type: step, heartrate, sleep>&start_date=<date in YYYY-MM-DD>&end_date=<date in YYYY-MM-DD>`
 
-eg. `?type=sleep&start_date=2022-01-01&end_date=2022-01-02`
+eg. 
+- date range: `?type=sleep&start_date=2022-01-01&end_date=2022-01-02`
+- specific date: `?type=sleep&start_date=2022-01-01&end_date=2022-01-01`
 
 ### Response
 #### Succeed
@@ -444,7 +449,7 @@ No permission for requested `type`                                              
 No such `type`                                                                   | 403_FORBIDDEN    | `{"detail": "Invalid type", 'types': ["step", "heartrate", "sleep"]}`
 
 ## /refresh-authorization-key
-
+This API proides a new access token with an existing and valid access token (before expiry)
 ### Method
 `PUT`
 
