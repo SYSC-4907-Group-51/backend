@@ -25,6 +25,18 @@ class FitbitWrapper:
             refresh_token=None,
             expires_at=None,
         ) -> None:
+        """
+            A wrapper that provides abstruct methods for communicating with 
+            Fitbit API.
+
+            Args:
+                token_updater: A function that updates the token.
+                access_token: string, the access token, None for new user to 
+                authorize.
+                refresh_token: string, the refresh token, None for new user to 
+                authorize.
+                expires_at: datetime, the time when the token expires.
+        """
         self.fitbit_obj = fitbit.Fitbit(
             FITBIT["ID"], 
             FITBIT["SECRET"],
@@ -35,43 +47,157 @@ class FitbitWrapper:
         )
 
     def get_authorization_url(self) -> str:
+        """
+            Generate the authorization url.
+            
+            Return:
+                url: string, the authorization url.
+                state: string, unique state code for current authorization.
+        """
         url, _ = self.fitbit_obj.client.authorize_token_url(scope=FITBIT["DEFAULT_SCOPE"])
         return url, self.fitbit_obj.client.session._state
 
     def get_token_dict(self, code: str) -> dict:
+        """
+            When the user authorize the application, Fitbit issues an 
+            authorization code, which is used to acquire access token and 
+            refresh token.
+
+            Args:
+                code: The authorization code.
+            
+            Return:
+                dict: A dictionary containing access token, refresh token, and 
+                expiration time.
+        """
         self.fitbit_obj.client.fetch_access_token(code)
         return self.fitbit_obj.client.session.token
     
     def get_user_profile(self) -> dict:
+        """
+            Get the user profile.
+
+            Return:
+                dict: A dictionary containing user profile.
+        """
         return self.fitbit_obj.user_profile_get()
 
     def get_devices(self) -> dict:
+        """
+            Get the user devices.
+            
+            Return:
+                dict: A dictionary containing user devices.
+        """
         return self.fitbit_obj.get_devices()
 
     def get_step_time_series(self, start_date: str="today", end_date: str="today"):
+        """
+            Get step time series.
+
+            Args:
+                start_date: string or datetime, the start date.
+                end_date: string or datetime, the end date.
+            
+            Return:
+                dict: A dictionary containing step time series.
+        """
         return self.__get_time_series('activities/tracker/steps', start_date, end_date)["activities-tracker-steps"]
     
     def get_heartrate_time_series(self, start_date: str="today", end_date: str="today"):
+        """
+            Get heart rate time series.
+
+            Args:
+                start_date: string or datetime, the start date.
+                end_date: string or datetime, the end date.
+            
+            Return:
+                dict: A dictionary containing heart rate time series.
+        """
         return self.__get_time_series('activities/heart', start_date, end_date)["activities-heart"]
 
     def get_sleep_time_series(self, start_date: str="today", end_date: str="today"):
+        """
+            Get sleep time series.
+
+            Args:
+                start_date: string or datetime, the start date.
+                end_date: string or datetime, the end date.
+            
+            Return:
+                dict: A dictionary containing sleep time series.
+        """
         return self.__get_time_series('sleep', start_date, end_date)["sleep"]
 
     def get_step_intraday_data(self, start_date: str="today", end_date: str="today", detail_level: str="1min") -> dict:
+        """
+            Get step intraday data.
+
+            Args:
+                start_date: string or datetime, the start date.
+                end_date: string or datetime, the end date.
+                detail_level: string, the detail level. `1min` or `15min`.
+            
+            Return:
+                dict: A dictionary containing step intraday data.
+        """
         return self.__get_intraday_data('activities/steps', start_date, detail_level)
 
     def get_heartrate_intraday_data(self, start_date: str="today", end_date: str="today", detail_level: str="1min") -> dict:
+        """
+            Get heart rate intraday data.
+
+            Args:
+                start_date: string or datetime, the start date.
+                end_date: string or datetime, the end date.
+                detail_level: string, the detail level. `1min` or `15min`.
+            
+            Return:
+                dict: A dictionary containing heart rate intraday data.
+        """
         return self.__get_intraday_data('activities/heart', start_date, detail_level)
 
     def __get_intraday_data(self, resource: str, base_date: datetime, detail_level: str) -> dict:
+        """
+            Abstract method for getting intraday data.
+
+            Args:
+                resource: string, the resource. `activities/steps` or 
+                `activities/heart`.
+                base_date: datetime, the start date.
+            
+            Return:
+                dict: A dictionary containing intraday data.
+        """
         return self.fitbit_obj.intraday_time_series(resource, base_date=base_date, detail_level=detail_level)
 
     def __get_time_series(self, resource: str, start_date: str, end_date: str) -> dict:
+        """
+            Abstract method for getting time series.
+
+            Args:
+                resource: string, the resource. `activities/tracker/steps` or
+                `activities/heart` or `sleep`.
+                start_date: string or datetime, the start date.
+                end_date: string or datetime, the end date.
+            
+            Return:
+                dict: A dictionary containing time series.
+        """
         return self.fitbit_obj.time_series(resource, base_date=start_date, end_date=end_date)
 
 class FitbitRetriever:
 
     def __init__(self, user: User=None, user_profile: UserProfile=None) -> None:
+        """
+            Initialize the FitbitRetriever.
+
+            Args:
+                user: User, the user.
+                user_profile: UserProfile, the user profile. One of user or
+                user_profile must be provided.
+        """
         self.user = user
         self.access_token = None
         self.refresh_token = None
@@ -93,6 +219,9 @@ class FitbitRetriever:
         )
 
     def __get_db_profile(self) -> None:
+        """
+            Get the user profile from database.
+        """
         try:
             self.user_profile = UserProfile.objects.get(user=self.user)
         except UserProfile.DoesNotExist:
@@ -109,6 +238,14 @@ class FitbitRetriever:
             self.is_authorized = self.user_profile.is_authorized
 
     def retrieve_all(self, start_date: date=None, end_date: date=None, force_update: bool=False) -> None:
+        """
+            Retrieve all tracker data from Fitbit.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+                force_update: bool, whether to force update.
+        """
         if type(start_date) is str:
             start_date = date.fromtimestamp(start_date)
         if type(end_date) is str:
@@ -149,6 +286,13 @@ class FitbitRetriever:
             self.calculate_sync_status()
 
     def token_updater(self, token_dict):
+        """
+            Update the access token, refresh token, expiry time, scope, and 
+            account id for the patient.
+
+            Args:
+                token_dict: dict, the token dictionary.
+        """
         self.access_token = token_dict['access_token']
         self.refresh_token = token_dict['refresh_token']
         self.expires_at = datetime.fromtimestamp(token_dict['expires_at'], tz=get_current_timezone())
@@ -162,6 +306,14 @@ class FitbitRetriever:
         self.user_profile.update_user_account_id(user_account_id)
     
     def calculate_sync_status(self, start_date: date=None, end_date: date=None):
+        """
+            Calculate the sync status for the user, including what data is 
+            synced and which date is synced.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+        """
         if start_date is None:
             start_date = date.fromisoformat(self.user_profile_json["memberSince"])
         if end_date is None:
@@ -193,6 +345,9 @@ class FitbitRetriever:
         return
     
     def save_user_profile(self):
+        """
+            Save the user profile into the database.
+        """
         self.user_profile = UserProfile.objects.get(user=self.user)
         try:
             self.user_profile_json = self.fitbit_obj.get_user_profile()['user']
@@ -214,6 +369,9 @@ class FitbitRetriever:
             self.user_profile.update_user_profile(self.user_profile_json)
 
     def save_user_devices(self):
+        """
+            Save the user devices into the database.
+        """
         def calc_last_sync_time(devices_dict):
             last_sync_time = datetime.fromisoformat("1990-01-01T12:00:00.000")
             for device_dict in devices_dict:
@@ -240,6 +398,13 @@ class FitbitRetriever:
         return user_devices
 
     def save_step_time_series(self, start_date: date=None, end_date: date=None):
+        """
+            Save the step time series into the database.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+        """
         model = UserStepTimeSeries
         error = None
         try:
@@ -275,6 +440,13 @@ class FitbitRetriever:
             raise error
     
     def save_heartrate_time_series(self, start_date: date=None, end_date: date=None):
+        """
+            Save the heartrate time series into the database.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+        """
         model = UserHeartrateTimeSeries
         error = None
         try:
@@ -314,6 +486,13 @@ class FitbitRetriever:
             raise error
     
     def save_sleep_time_series(self, start_date: date=None, end_date: date=None):
+        """
+            Save the sleep time series into the database.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+        """
         model = UserSleepTimeSeries
         error = None
         try:
@@ -373,6 +552,13 @@ class FitbitRetriever:
             raise error
 
     def save_step_intraday_data(self, start_date: date=None, end_date: date=None):
+        """
+            Save the step intraday data into the database.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+        """
         model = UserStepIntradayData
         error = None
         try:
@@ -418,6 +604,13 @@ class FitbitRetriever:
             raise error
 
     def save_heartrate_intraday_data(self, start_date: date=None, end_date: date=None):
+        """
+            Save the heartrate intraday data into the database.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+        """
         model = UserHeartrateIntradayData
         error = None
         try:
@@ -463,6 +656,25 @@ class FitbitRetriever:
             raise error
     
     def __retrieve_latest_date(self, model, action, duration, endpoint, start_date: date=None, end_date: date=None, detail_level: str=None):
+        """
+            Retrieve the latest date from Fitbit.
+
+            Args:
+                model: model, the database model to be used.
+                action: str, the action to be logged.
+                duration: int, the duration of the data to be retrieved.
+                endpoint: function, the Fitbit API endpoint to be used.
+                start_date: date, the start date.
+                end_date: date, the end date.
+                detail_level: str, the detail level of the data to be 
+                retrieved. `1min` or `15min`
+            
+            Return:
+                list: the retrieved data.
+
+            Raises:
+                Exception: API quota exceeded, the retrieved data is partial and is stored in `self.__partial_entries`.
+        """
         existing_entries = model.objects.filter(user_profile=self.user_profile)
         if start_date is None:
             if existing_entries.count() == 0:
@@ -507,6 +719,16 @@ class FitbitRetriever:
         return items
 
     def __append_items(self, items: dict, data):
+        """
+            Append the retrieved data to the existing data.
+
+            Args:
+                items: dict, the existing data.
+                data: dict, the retrieved data.
+            
+            Return:
+                list: the appended data.
+        """
         if type(data) is list:
             for item in data:
                 items.append(item)
@@ -515,6 +737,17 @@ class FitbitRetriever:
         return items
     
     def __calculate_time_intervals(self, start_date, end_date, duration):
+        """
+            Calculate the time intervals between the start date and the end date.
+
+            Args:
+                start_date: date, the start date.
+                end_date: date, the end date.
+                duration: int, the duration between each date.
+            
+            Return:
+                list: the time intervals.
+        """
         time_delta = (end_date - start_date).days
         time_intervals = [(start_date + timedelta(days=x)).strftime("%Y-%m-%d") for x in range(0, time_delta, duration)]
         if len(time_intervals) != 0 and time_intervals[-1] != end_date.strftime("%Y-%m-%d"):
@@ -522,6 +755,15 @@ class FitbitRetriever:
         return time_intervals
 
     def __get_step_time_series(self, date_time: date):
+        """
+            Get the step time series from the database.
+
+            Args:
+                date_time: date, the date of the time series.
+            
+            Return:
+                UserStepTimeSeries: the step time series.
+        """
         try:
             return UserStepTimeSeries.objects.get(
                 user_profile=self.user_profile,
@@ -531,6 +773,15 @@ class FitbitRetriever:
             return None
     
     def __get_heartrate_time_series(self, date_time: date):
+        """
+            Get the heartrate time series from the database.
+
+            Args:
+                date_time: date, the date of the time series.
+            
+            Return:
+                UserHeartrateTimeSeries: the heartrate time series.
+        """
         try:
             return UserHeartrateTimeSeries.objects.get(
                 user_profile=self.user_profile,
@@ -540,6 +791,15 @@ class FitbitRetriever:
             return None
 
     def __get_sleep_time_series(self, date_time: date):
+        """
+            Get the sleep time series from the database.
+
+            Args:
+                date_time: date, the date of the time series.
+            
+            Return:
+                UserSleepTimeSeries: the sleep time series.
+        """
         try:
             return UserSleepTimeSeries.objects.get(
                 user_profile=self.user_profile,
@@ -549,6 +809,15 @@ class FitbitRetriever:
             return None
 
     def __get_step_intraday_data(self, date_time: date):
+        """
+            Get the step intraday data from the database.
+
+            Args:
+                date_time: date, the date of the intraday data.
+            
+            Return:
+                UserStepIntradayData: the step intraday data.
+        """
         try:
             return UserStepIntradayData.objects.get(
                 user_profile=self.user_profile,
@@ -558,6 +827,15 @@ class FitbitRetriever:
             return None
 
     def __get_heartrate_intraday_data(self, date_time: date):
+        """
+            Get the heartrate intraday data from the database.
+
+            Args:
+                date_time: date, the date of the intraday data.
+            
+            Return:
+                UserHeartrateIntradayData: the heartrate intraday data.
+        """
         try:
             return UserHeartrateIntradayData.objects.get(
                 user_profile=self.user_profile,
@@ -568,7 +846,7 @@ class FitbitRetriever:
 
     def __generate_uuid(self, time):
         """
-            Generate a unique id for the given time.
+            Generate a unique id for the given time and username.
 
             Args:
                 time: string, the time to generate the id for in %Y-%m-%d.
