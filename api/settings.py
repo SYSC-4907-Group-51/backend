@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 import os
 
 if os.getenv("ENV") == "production":
@@ -151,3 +152,7 @@ UTILS_CONSTANTS = {
 CRONJOBS = [
     ('0 */6 * * *', 'api.cronjob.retrieve_all_user_data', '>> /tmp/api_cron.log') # Every 6 hours
 ]
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
+}

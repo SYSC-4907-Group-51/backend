@@ -47,6 +47,8 @@ services:
         container_name: backend_container
         volumes:
             - ./:/app
+        ports:
+            - 8000:8000
         environment:
             ENV: production
         restart: always
