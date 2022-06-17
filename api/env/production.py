@@ -6,4 +6,4 @@ DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS=['https://cap-api.gura.ch']
+CSRF_TRUSTED_ORIGINS=['https://cap-api.sce.carleton.ca']

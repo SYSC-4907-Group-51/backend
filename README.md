@@ -1,5 +1,5 @@
 # Backend
-API URL: `https://cap-api.gura.ch/`
+API URL: `https://cap-api.sce.carleton.ca/`
 
 ## Run
 
@@ -66,7 +66,7 @@ services:
 For Caddy V2
 
 ```conf
-cap-api.gura.ch {
+cap-api.sce.carleton.ca {
     
     # CORS
     header Access-Control-Allow-Origin *

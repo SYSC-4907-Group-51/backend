@@ -146,7 +146,7 @@ UTILS_CONSTANTS = {
     "KEY_LENGTH": 6,
     "RE_GENERATE_KEY_LIMIT": 10,
     "AUTHORIZATION_KEY_EXP_TIME_IN_HOURS": 1,
-    "DOMAIN": "https://cap.gura.ch",
+    "DOMAIN": "https://cap.sce.carleton.ca",
 }
 
 CRONJOBS = [
